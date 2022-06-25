@@ -20,7 +20,7 @@
 telemetry_t data;
 bool isIMUAvailable = false;
 bool DEBUG_MODE = false;
-char filename[12];
+char filename[13];
 char timestamp[32];
 
 // Flags

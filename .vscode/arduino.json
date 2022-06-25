@@ -1,0 +1,6 @@
+{
+    "configuration": "CDCOnBoot=default,MSCOnBoot=default,DFUOnBoot=default,UploadMode=default,PSRAM=disabled,PartitionScheme=default,CPUFreq=240,FlashMode=qio,FlashFreq=80,FlashSize=4M,UploadSpeed=921600,DebugLevel=none",
+    "board": "Thetis:esp32:thetis_rev_f4",
+    "sketch": "Thetis_A_EmbeddedAccelerometer\\Thetis_A_EmbeddedAccelerometer.ino",
+    "port": "COM3"
+}

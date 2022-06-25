@@ -10,7 +10,7 @@
             "includePath": [
                 "c:/Users/legoh/Documents/PlatformIO/Projects/Thetis-Firmware-PIO/include",
                 "c:/Users/legoh/Documents/PlatformIO/Projects/Thetis-Firmware-PIO/src",
-                "c:/Users/legoh/Documents/PlatformIO/Projects/Thetis-Firmware-PIO/lib/ThetisLib/src",
+                "c:/Users/legoh/Documents/PlatformIO/Projects/Thetis-Firmware-PIO/.pio/libdeps/thetis_revf4/ThetisLib/src",
                 "C:/Users/legoh/.platformio/packages/framework-arduinoespressif32/libraries/SD/src",
                 "C:/Users/legoh/.platformio/packages/framework-arduinoespressif32/libraries/FS/src",
                 "c:/Users/legoh/Documents/PlatformIO/Projects/Thetis-Firmware-PIO/.pio/libdeps/thetis_revf4/Adafruit NeoPixel",
@@ -232,7 +232,7 @@
                 "path": [
                     "c:/Users/legoh/Documents/PlatformIO/Projects/Thetis-Firmware-PIO/include",
                     "c:/Users/legoh/Documents/PlatformIO/Projects/Thetis-Firmware-PIO/src",
-                    "c:/Users/legoh/Documents/PlatformIO/Projects/Thetis-Firmware-PIO/lib/ThetisLib/src",
+                    "c:/Users/legoh/Documents/PlatformIO/Projects/Thetis-Firmware-PIO/.pio/libdeps/thetis_revf4/ThetisLib/src",
                     "C:/Users/legoh/.platformio/packages/framework-arduinoespressif32/libraries/SD/src",
                     "C:/Users/legoh/.platformio/packages/framework-arduinoespressif32/libraries/FS/src",
                     "c:/Users/legoh/Documents/PlatformIO/Projects/Thetis-Firmware-PIO/.pio/libdeps/thetis_revf4/Adafruit NeoPixel",

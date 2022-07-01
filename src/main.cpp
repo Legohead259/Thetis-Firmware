@@ -1,8 +1,8 @@
 /**
  * @file Thetis Firmware Variant A - Embedded Accelerometer
- * @version 0.2.1
+ * @version 0.2.2
  * 
- * @brief This firmware variant emables Thetis to act as an embedded accelerometer.
+ * @brief This firmware variant enables Thetis to act as an embedded accelerometer.
  * Accelerometer values will be logged to the onboard storage device and can be accesible via the WiFi interface, if enabled.
  * This firmware will work on a barebones Thetis that does not have a GPS module.
  * Currently compatible with the following boards:
@@ -11,6 +11,7 @@
  * Version 0.1.0 - Initial baseline release
  * Version 0.2.0 - Added GPS integration
  * Version 0.2.1 - Integrated internal RTC for timestamps
+ * Version 0.2.2 - Fixed log file write issue and implemented log enable functionality
  * 
  * @author Braidan Duffy
  * @date June 10, 2022
@@ -68,7 +69,7 @@ void setup() {
     }
 
     // TODO: Attach logging functioanlity
-    attachInterrupt(LOG_EN, logButtonISR, FALLING);
+    attachInterrupt(LOG_EN, logButtonISR, CHANGE);
 
     // TODO: Load configuration data from file on SD card
 
@@ -92,10 +93,8 @@ void loop() {
 
         // Write data to log file
         if (isLogging) {
-            
-
             char _writeBuf[64];
-            sprintf(_writeBuf, "%s,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f",  
+            sprintf(_writeBuf, "%s,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f\n\r",  
                     timestamp, // TODO: update to internal RTC value (or GPS)
                     accel.acceleration.x, accel.acceleration.y, accel.acceleration.z,
                     linAccel.x, linAccel.y, linAccel.z);
@@ -107,14 +106,17 @@ void loop() {
 
     // TODO: Implement server refresh at 1 Hz, if client connected
 
-    // TODO: Check for log button hold
-    if (logButtonPressed && millis() >= logButtonStartTime+LOG_BTN_HOLD_TIME) {
+    static long _oldButtonPresses = 0;
+    if (logButtonPresses != _oldButtonPresses && !digitalRead(LOG_EN) && millis() >= logButtonStartTime+LOG_BTN_HOLD_TIME) {
         isLogging = !isLogging;
-        if (isLogFileCreated) {
+        if (!isLogFileCreated) {
             if (!initLogFile(SD, filename, "Timestamp (ISO 8601), ax, ay, az, lin_ax, lin_ay, lin_az")) { // Initialize log file and check if good
                 while(true) blinkCode(FILE_ERROR_CODE); // block further code execution
             }
+            isLogFileCreated = true;
         }
+        digitalWrite(LED_BUILTIN, isLogging);
+        _oldButtonPresses = logButtonPresses;
     }
 }
 

@@ -67,8 +67,9 @@ void setup() {
         while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
     }
 
-    // TODO: Attach logging functioanlity
-    attachInterrupt(LOG_EN, logButtonISR, CHANGE);
+    attachInterrupt(LOG_EN, logButtonISR, FALLING);
+
+    // TODO: Initialize internal RTC using compile __DATE__ and __TIME__
 
     // TODO: Load configuration data from file on SD card
 

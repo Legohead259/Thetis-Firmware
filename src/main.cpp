@@ -30,7 +30,6 @@ bool DEBUG_MODE = false;
 char filename[13];
 char timestamp[32];
 
-
 // Flags
 bool isGPSEnable = true;
 bool isLogging = false;
@@ -94,7 +93,7 @@ void loop() {
         // Write data to log file
         if (isLogging) {
             char _writeBuf[64];
-            sprintf(_writeBuf, "%s,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f\n\r",  
+            sprintf(_writeBuf, "%s,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f\n",  
                     timestamp, // TODO: update to internal RTC value (or GPS)
                     accel.acceleration.x, accel.acceleration.y, accel.acceleration.z,
                     linAccel.x, linAccel.y, linAccel.z);
@@ -110,7 +109,7 @@ void loop() {
     if (logButtonPresses != _oldButtonPresses && !digitalRead(LOG_EN) && millis() >= logButtonStartTime+LOG_BTN_HOLD_TIME) {
         isLogging = !isLogging;
         if (!isLogFileCreated) {
-            if (!initLogFile(SD, filename, "Timestamp (ISO 8601), ax, ay, az, lin_ax, lin_ay, lin_az")) { // Initialize log file and check if good
+            if (!initLogFile(SD, filename, "Timestamp (ISO 8601),ax,ay,az,lin_ax,lin_ay,lin_az\n")) { // Initialize log file and check if good
                 while(true) blinkCode(FILE_ERROR_CODE); // block further code execution
             }
             isLogFileCreated = true;

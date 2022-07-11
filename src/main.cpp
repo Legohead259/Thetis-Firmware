@@ -92,10 +92,11 @@ void loop() {
         pollDSO32();
 
         // Write data to log file
-        if (isLogging) {
+        if (isLogging) { // TODO: Find the bug when logging with the ISO8601 timestamp. - Could be accessing now() so often? Change to call breakTime every new second???
             char _writeBuf[64];
+            getISO8601Time_RTC(timestamp);
             sprintf(_writeBuf, "%s,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f\n",  
-                    timestamp, // TODO: update to internal RTC value (or GPS)
+                    timestamp,
                     accel.acceleration.x, accel.acceleration.y, accel.acceleration.z,
                     linAccel.x, linAccel.y, linAccel.z);
             appendFile(SD, filename, _writeBuf);

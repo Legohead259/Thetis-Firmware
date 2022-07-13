@@ -67,7 +67,7 @@ void setup() {
         while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
     }
 
-    attachInterrupt(LOG_EN, logButtonISR, FALLING);
+    // attachInterrupt(LOG_EN, logButtonISR, FALLING);
 
     // TODO: Initialize internal RTC using compile __DATE__ and __TIME__
 
@@ -108,7 +108,13 @@ void loop() {
     // TODO: Implement server refresh at 1 Hz, if client connected
 
     static long _oldButtonPresses = 0;
-    if (logButtonPresses != _oldButtonPresses && !digitalRead(LOG_EN) && millis() >= logButtonStartTime+LOG_BTN_HOLD_TIME) {
+    pinMode(0, INPUT);
+    if (!digitalRead(0)) { // Check if BTN0 is pressed
+        logButtonPresses++;
+        logButtonStartTime = millis();
+    }
+
+    if (logButtonPresses != _oldButtonPresses && !digitalRead(0) && millis() >= logButtonStartTime+LOG_BTN_HOLD_TIME) { // Check if BTN0 has been pressed and has been held for sufficient time
         isLogging = !isLogging;
         if (!isLogFileCreated) {
             if (!initLogFile(SD, filename, "Timestamp (ISO 8601),ax,ay,az,lin_ax,lin_ay,lin_az\n")) { // Initialize log file and check if good

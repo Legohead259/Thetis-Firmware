@@ -15,7 +15,7 @@
  * 
  * @author Braidan Duffy
  * @date June 10, 2022
- *       July 01, 2022 (last edit)
+ *       July 13, 2022 (last edit)
 **/
 #include <ThetisLib.h>
 

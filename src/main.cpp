@@ -12,10 +12,11 @@
  * Version 0.2.0 - Added GPS integration
  * Version 0.2.1 - Integrated internal RTC for timestamps
  * Version 0.2.2 - Fixed log file write issue and implemented log enable functionality
+ * Version 0.2.3 - Fixed major bug with the device crashing on log enabled
  * 
  * @author Braidan Duffy
  * @date June 10, 2022
- *       July 13, 2022 (last edit)
+ *       July 17, 2022 (last edit)
 **/
 #include <ThetisLib.h>
 
@@ -28,7 +29,7 @@ telemetry_t data;
 bool isIMUAvailable = false;
 bool DEBUG_MODE = false;
 char filename[13];
-char timestamp[32];
+char timestamp[40];
 
 // Flags
 bool isGPSEnable = true;
@@ -67,7 +68,7 @@ void setup() {
         while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
     }
 
-    // attachInterrupt(LOG_EN, logButtonISR, FALLING);
+    attachInterrupt(LOG_EN, logButtonISR, FALLING);
 
     // TODO: Initialize internal RTC using compile __DATE__ and __TIME__
 
@@ -93,7 +94,7 @@ void loop() {
 
         // Write data to log file
         if (isLogging) { // TODO: Find the bug when logging with the ISO8601 timestamp. - Could be accessing now() so often? Change to call breakTime every new second???
-            char _writeBuf[64];
+            char _writeBuf[128];
             getISO8601Time_RTC(timestamp);
             sprintf(_writeBuf, "%s,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f\n",  
                     timestamp,
@@ -107,14 +108,8 @@ void loop() {
 
     // TODO: Implement server refresh at 1 Hz, if client connected
 
-    static long _oldButtonPresses = 0;
-    pinMode(0, INPUT);
-    if (!digitalRead(0)) { // Check if BTN0 is pressed
-        logButtonPresses++;
-        logButtonStartTime = millis();
-    }
-
-    if (logButtonPresses != _oldButtonPresses && !digitalRead(0) && millis() >= logButtonStartTime+LOG_BTN_HOLD_TIME) { // Check if BTN0 has been pressed and has been held for sufficient time
+    static uint8_t _oldButtonPresses = 0;
+    if (logButtonPresses != _oldButtonPresses && !digitalRead(LOG_EN) && millis() >= logButtonStartTime+LOG_BTN_HOLD_TIME) { // Check if BTN0 has been pressed and has been held for sufficient time
         isLogging = !isLogging;
         if (!isLogFileCreated) {
             if (!initLogFile(SD, filename, "Timestamp (ISO 8601),ax,ay,az,lin_ax,lin_ay,lin_az\n")) { // Initialize log file and check if good

@@ -15,10 +15,14 @@ Release sections
 ### Security 
 -->
 
-## Unreleased (0.2.3)
+## Unreleased
 
 ### **TODO**
-- Fix device crashing after enabling log while parsing timestamps
+
+## 0.2.3 - 2022-07-14
+
+### Fixed
+- Fix device crashing after enabling log while parsing timestamps ([Thetis-Firmware #1](https://github.com/Legohead259/Project-Thetis-Firmware/issues/1))
 
 ---
 

@@ -453,7 +453,7 @@
                 ]
             },
             "defines": [
-                "PLATFORMIO=60002",
+                "PLATFORMIO=60101",
                 "ARDUINO_ESP32S2_DEV",
                 "ARDUINO_USB_CDC_ON_BOOT",
                 "HAVE_CONFIG_H",

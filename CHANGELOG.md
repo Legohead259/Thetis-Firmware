@@ -16,22 +16,32 @@ Release sections
 -->
 
 ## Unreleased
-
 ### **TODO**
-- Added loading configurations from config file stored in SPIFFS
-- Added WiFi hotspot functionality
-    - Loaded HTML file from SPIFFS
+
+---
+
+## 0.3.0 - 2022-07-15
+### Added
+- Added loading configurations from config file stored in SPIFFS [#2](https://github.com/Legohead259/Project-Thetis-Firmware/issues/2)
+- Added core WiFi hotspot functionality ([#3](https://github.com/Legohead259/Project-Thetis-Firmware/issues/3))
+    - Can load index.html file from SPIFFS
+    - Can load style.css file from SPIFFS
+    - Can be enabled or disabled with the build flag `-D WIFI_ENABLE`
+
+### Changed
+- Renamed time elements variable, `tm`, to `timeElements` to enable compatibility with WiFi library
+---
 
 ## 0.2.3 - 2022-07-14
 
 ### Fixed
-- Fix device crashing after enabling log while parsing timestamps ([Thetis-Firmware #1](https://github.com/Legohead259/Project-Thetis-Firmware/issues/1))
+- Fix device crashing after enabling log while parsing timestamps ([#1](https://github.com/Legohead259/Project-Thetis-Firmware/issues/1))
 
 ---
 
 ## 0.2.2 - 2022-07-13 [YANKED]
 ### Known Bugs
-- [CRITICAL] Device crashes after enabling log while parsing timestamps ([Thetis-Firmware #1](https://github.com/Legohead259/Project-Thetis-Firmware/issues/1))
+- [CRITICAL] Device crashes after enabling log while parsing timestamps ([#1](https://github.com/Legohead259/Project-Thetis-Firmware/issues/1))
 ### Added
 - Log enable functionality by holding the LOG_EN button for 1 second
 

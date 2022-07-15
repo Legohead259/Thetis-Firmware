@@ -24,8 +24,16 @@
 // #define GPS_DEBUG
 // #define SDCARD_DEBUG
 // #define SDCONFIG_DEBUG
+// #define WIFI_ENABLE
+#ifdef WIFI_ENABLE
+    #include "WiFi.h"
+    #include "ESPAsyncWebServer.h"
+    char ssid[32];
+    AsyncWebServer server(80); // Create AsyncWebServer object on port 80
+#endif // WIFI_ENABLE
 
 #include <ThetisLib.h>
+
 #include <SPIFFS.h>
 
 #define GPS_SYNC_INTERVAL 1 // minutes
@@ -38,10 +46,8 @@ char filename[13];
 char timestamp[40];
 
 // Configuration Data
-SDConfig cfg;
-bool isWiFiEnabled = false;
+Config cfg;
 bool isGPSEnable = true;
-char ssid[32];
 uint8_t deviceID;
 
 // Flags
@@ -61,9 +67,9 @@ void setup() {
         while(!Serial); // Wait for serial connection
     }
 
-    Serial.println("-------------------------------------------------------");
-    Serial.println("   Thetis Firmware Variant A: Embedded Accelerometer   ");
-    Serial.println("-------------------------------------------------------");
+    Serial.println("-------------------------------------");
+    Serial.println("    Thetis Firmware Version 0.3.0    ");
+    Serial.println("-------------------------------------");
     Serial.println();
 
     initNeoPixel();
@@ -89,7 +95,6 @@ void setup() {
 	}
     Serial.println("done!");
 
-    // TODO: Load configuration data from file on SD card
     Serial.print("Loading configurations...");
     if (cfg.begin(SPIFFS, "/config.cfg", 127)) {
         Serial.println();
@@ -99,15 +104,10 @@ void setup() {
                 Serial.print("The ID of this device is configured to: ");
                 Serial.println(deviceID);
             }
-            else if (cfg.nameIs("wifi_enable")) {
-                isWiFiEnabled = cfg.getBooleanValue();
-                Serial.print("Wifi access point has been: ");
-                Serial.println(isWiFiEnabled ? "Enabled" : "Disabled");
-            }
-            else if (cfg.nameIs("ssid")) {
-                strcpy(ssid, cfg.copyValue());
-                Serial.print("Access point SSID set to: ");
-                Serial.println(ssid);
+            else if (cfg.nameIs("gps_enable")) {
+                isGPSEnable = cfg.getBooleanValue();
+                Serial.print("GPS functionality has been: ");
+                Serial.println(isGPSEnable ? "Enabled" : "Disabled");
             }
             else {
                 Serial.print("Unknown setting name: ");
@@ -128,7 +128,22 @@ void setup() {
     // Attach the log enable button interrupt
     attachInterrupt(LOG_EN, logButtonISR, FALLING);
 
-    // TODO: Begin WiFi station and server, if enabled
+    #ifdef WIFI_ENABLE
+        Serial.print("Starting WiFi access point...");
+        sprintf(ssid, "Thetis-%03u", deviceID); // Format AP SSID based on Device ID
+        if (!WiFi.softAP(ssid, "")) {
+            Serial.println("Failed to start access point!");
+            while (true) blinkCode(RADIO_ERROR_CODE); // Block code execution
+        }
+        Serial.println("done!");
+
+        IPAddress IP = WiFi.softAPIP();
+        Serial.print("AP IP address: ");
+        Serial.println(IP);
+
+        // Start server
+        server.begin();
+    #endif // WIFI_ENABLE
 }
 
 void loop() {
@@ -186,18 +201,22 @@ void syncInternalClockGPS() {
         nmea.process(c);
     }
     if (nmea.isValid()) { // If the GPS has a good fix, reset the internal clock to the GPS time
-        tm.Year = nmea.getYear()-1970;
-        tm.Month = nmea.getMonth();
-        tm.Day = nmea.getDay();
-        tm.Hour = nmea.getHour();
-        tm.Minute = nmea.getMinute();
-        tm.Second = nmea.getSecond();
+        timeElements.Year = nmea.getYear()-1970;
+        timeElements.Month = nmea.getMonth();
+        timeElements.Day = nmea.getDay();
+        timeElements.Hour = nmea.getHour();
+        timeElements.Minute = nmea.getMinute();
+        timeElements.Second = nmea.getSecond();
 
-        setTime(makeTime(tm)); // Reset internal clock
+        setTime(makeTime(timeElements)); // Reset internal clock
         Serial.println("Done!");
     }
     else {
         Serial.println("GPS fix was not valid - did not sync");
     }
     Serial.println();
+}
+
+String processor(const String& var){
+    return var;
 }

@@ -18,6 +18,9 @@ Release sections
 ## Unreleased
 
 ### **TODO**
+- Added loading configurations from config file stored in SPIFFS
+- Added WiFi hotspot functionality
+    - Loaded HTML file from SPIFFS
 
 ## 0.2.3 - 2022-07-14
 

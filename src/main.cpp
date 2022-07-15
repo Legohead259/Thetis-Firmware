@@ -1,6 +1,6 @@
 /**
- * @file Thetis Firmware Variant A - Embedded Accelerometer
- * @version 0.2.2
+ * @file Thetis Firmware
+ * @version 0.3.0
  * 
  * @brief This firmware variant enables Thetis to act as an embedded accelerometer.
  * Accelerometer values will be logged to the onboard storage device and can be accesible via the WiFi interface, if enabled.
@@ -13,12 +13,20 @@
  * Version 0.2.1 - Integrated internal RTC for timestamps
  * Version 0.2.2 - Fixed log file write issue and implemented log enable functionality
  * Version 0.2.3 - Fixed major bug with the device crashing on log enabled
+ * Version 0.3.0 - Added loading configurations from file on SPIFFS; added WiFi hotspot functionality
  * 
  * @author Braidan Duffy
  * @date June 10, 2022
- *       July 17, 2022 (last edit)
+ *       July 15, 2022 (last edit)
 **/
+// DEBUG FLAGS
+// #define IMU_DEBUG
+// #define GPS_DEBUG
+// #define SDCARD_DEBUG
+// #define SDCONFIG_DEBUG
+
 #include <ThetisLib.h>
+#include <SPIFFS.h>
 
 #define GPS_SYNC_INTERVAL 1 // minutes
 #define GPS_TIMEOUT 5000 // ms
@@ -26,23 +34,29 @@
 #define IMU_POLL_INTERVAL 1000/IMU_POLL_RATE // ms
 
 telemetry_t data;
-bool isIMUAvailable = false;
-bool DEBUG_MODE = false;
 char filename[13];
 char timestamp[40];
 
-// Flags
+// Configuration Data
+SDConfig cfg;
+bool isWiFiEnabled = false;
 bool isGPSEnable = true;
+char ssid[32];
+uint8_t deviceID;
+
+// Flags
+bool isDebugging = false;
+bool isIMUAvailable = false;
 bool isLogging = false;
 bool isLogFileCreated = false;
 
+// Prototypes
 void syncInternalClockGPS();
-bool getTime(const char *str);
-bool getDate(const char *str);
+void loadConfig();
 
 void setup() {
-    DEBUG_MODE = digitalRead(USB_DETECT); // Check if USB is plugged in
-    if (DEBUG_MODE) {
+    isDebugging = digitalRead(USB_DETECT); // Check if USB is plugged in
+    if (isDebugging) {
         Serial.begin(115200);
         while(!Serial); // Wait for serial connection
     }
@@ -68,15 +82,51 @@ void setup() {
         while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
     }
 
-    attachInterrupt(LOG_EN, logButtonISR, FALLING);
-
-    // TODO: Initialize internal RTC using compile __DATE__ and __TIME__
+    Serial.print("Initializing SPIFFS...");
+    if (!SPIFFS.begin()) { // Initialize internal filesystem and check if good
+		Serial.print("Failed to initialize SPIFFS!");
+		while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block code execution
+	}
+    Serial.println("done!");
 
     // TODO: Load configuration data from file on SD card
-
+    Serial.print("Loading configurations...");
+    if (cfg.begin(SPIFFS, "/config.cfg", 127)) {
+        Serial.println();
+        while (cfg.readNextSetting()) {
+            if (cfg.nameIs("id")) {
+                deviceID = cfg.getIntValue();
+                Serial.print("The ID of this device is configured to: ");
+                Serial.println(deviceID);
+            }
+            else if (cfg.nameIs("wifi_enable")) {
+                isWiFiEnabled = cfg.getBooleanValue();
+                Serial.print("Wifi access point has been: ");
+                Serial.println(isWiFiEnabled ? "Enabled" : "Disabled");
+            }
+            else if (cfg.nameIs("ssid")) {
+                strcpy(ssid, cfg.copyValue());
+                Serial.print("Access point SSID set to: ");
+                Serial.println(ssid);
+            }
+            else {
+                Serial.print("Unknown setting name: ");
+                Serial.println(cfg.getName());
+            }
+        }
+        cfg.end();
+    }
+    else {
+        Serial.print("Failed to open configuration file!");
+        while (true) blinkCode(FILE_ERROR_CODE); // Block code execution
+    }
+   
     if (isGPSEnable) {
         syncInternalClockGPS();
     }
+
+    // Attach the log enable button interrupt
+    attachInterrupt(LOG_EN, logButtonISR, FALLING);
 
     // TODO: Begin WiFi station and server, if enabled
 }
@@ -93,7 +143,7 @@ void loop() {
         pollDSO32();
 
         // Write data to log file
-        if (isLogging) { // TODO: Find the bug when logging with the ISO8601 timestamp. - Could be accessing now() so often? Change to call breakTime every new second???
+        if (isLogging) {
             char _writeBuf[128];
             getISO8601Time_RTC(timestamp);
             sprintf(_writeBuf, "%s,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f\n",  

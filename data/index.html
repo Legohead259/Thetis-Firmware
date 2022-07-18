@@ -7,9 +7,23 @@
     <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
-    <h1>ESP32 Web Server</h1>
-    <p>GPIO state: <strong> %STATE%</strong></p>
-    <p><a href="/on"><button class="button">ON</button></a></p>
-    <p><a href="/off"><button class="button button2">OFF</button></a></p>
+    <h1> Thetis WebUI </h1>
+    <div class="system-wrapper">
+        <div id="system-status">
+            <h2> System Status </h2>
+            <!-- Draw box and make flash colors according to state-->
+        </div>
+        <div id="system-info">
+            <div class="version-info">
+                <div> <span> <strong> Device ID </strong> </span>        : <span> %DEVICE_ID% </span> <br> </div>
+                <div> <span> <strong> Firmware Version </strong> </span> : <span> %FW_VERSION% </span> <br> </div>
+                <div> <span> <strong> Revision </strong> </span>         : <span> %HW_REVISION% </span> <br> </div>
+            </div>
+        </div>
+        <div id="system-time">
+            <h2> System Time </h2>
+            <p> %TIMESTAMP% </p>
+        </div>
+    </div>
 </body>
 </html>

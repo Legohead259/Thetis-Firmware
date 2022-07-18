@@ -19,6 +19,9 @@
  * @date June 10, 2022
  *       July 15, 2022 (last edit)
 **/
+const char FW_VERSION[] = "0.3.0";
+const char HW_REVISION[] = "Rev F4";
+
 // DEBUG FLAGS
 // #define IMU_DEBUG
 // #define GPS_DEBUG
@@ -59,6 +62,7 @@ bool isLogFileCreated = false;
 // Prototypes
 void syncInternalClockGPS();
 void loadConfig();
+String processor(const String &var);
 
 void setup() {
     isDebugging = digitalRead(USB_DETECT); // Check if USB is plugged in
@@ -141,6 +145,16 @@ void setup() {
         Serial.print("AP IP address: ");
         Serial.println(IP);
 
+        // Route for root / web page
+        server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+            request->send(SPIFFS, "/index.html", String(), false, processor);
+        });
+        
+        // Route to load style.css file
+        server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request){
+            request->send(SPIFFS, "/style.css", "text/css");
+        });
+
         // Start server
         server.begin();
     #endif // WIFI_ENABLE
@@ -217,6 +231,22 @@ void syncInternalClockGPS() {
     Serial.println();
 }
 
-String processor(const String& var){
+String processor(const String &var) {
+    Serial.print(var); Serial.print(": ");
+    if (var == "DEVICE_ID") {
+        char _deviceIDStr[4];
+        sprintf(_deviceIDStr, "%03u", deviceID);
+        Serial.println(_deviceIDStr);
+        return _deviceIDStr;
+    }
+    else if (var == "FW_VERSION") {
+        Serial.println(FW_VERSION);
+        return FW_VERSION;
+    }
+    else if (var == "HW_REVISION") {
+        Serial.println(HW_REVISION);
+        return HW_REVISION;
+    }
+    Serial.println();
     return var;
 }

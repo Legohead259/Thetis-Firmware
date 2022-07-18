@@ -4,25 +4,42 @@ html {
     margin: 0px auto;
     text-align: center;
 }
-h1 {
-    color: #0F3376;
-    padding: 2vh;
+.system-wrapper {
+  display: flex;
 }
-p{
-    font-size: 1.5rem;
+
+.system-wrapper div {
+  flex: 1; /*grow*/
+  vertical-align: top;
+  border: 1px solid black;
 }
-.button {
-    display: inline-block;
-    background-color: #008CBA;
-    border: none;
-    border-radius: 4px;
-    color: white;
-    padding: 16px 40px;
-    text-decoration: none;
-    font-size: 30px;
-    margin: 2px;
-    cursor: pointer;
+
+#system-time {
+  /* font-size: 1.5rem; */
+
 }
-.button2 {
-    background-color: #f44336;
-}
+
+/* Versioning information */
+.version-info div {
+    display: flex;
+    text-align: center;
+  }
+  
+  .version-info span {
+    flex: 1;
+  }
+  
+  .version-info span:first-of-type {
+    text-align: right;
+    padding-right: 5px;
+  }
+  
+  .version-info span:last-of-type {
+    text-align: left;
+    padding-left: 1px;
+  }
+
+  .version-info div p {
+    font-size: 1.0rem;
+  }
+

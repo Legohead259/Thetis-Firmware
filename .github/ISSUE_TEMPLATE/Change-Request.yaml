@@ -8,9 +8,9 @@ body:
   - type: textarea
     id: desired-behavior
     attributes:
-      label: What is the Desired Behavior?
-      description: Tell us what you expect to happen.
-      placeholder: Give us something new!
+      label: What behavior would you like changed?
+      description: Tell us what changes you would like implemented.
+      placeholder: Give us something to do!
     validations:
       required: true
   - type: textarea

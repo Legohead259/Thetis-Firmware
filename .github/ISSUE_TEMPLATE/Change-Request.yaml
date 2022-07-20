@@ -1,7 +1,7 @@
-name: Feature Request
-description: File a feature request
-title: "[Feature Request]: "
-labels: ["enhancement"]
+name: Change Request
+description: File a change request
+title: "[Change Request]: "
+labels: ["change"]
 assignees:
   - Legohead259
 body:

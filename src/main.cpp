@@ -67,7 +67,7 @@ void loadConfig();
 String processor(const String &var);
 void updateSystemState();
 void updateSystemLED();
-bool writeTelemetryData(fs::FS &fs, const char * path=filename, telemetry_t &data=data);
+bool writeTelemetryData();
 
 void setup() {
     isDebugging = digitalRead(USB_DETECT); // Check if USB is plugged in
@@ -77,7 +77,7 @@ void setup() {
     }
 
     Serial.println("-------------------------------------");
-    Serial.println("    Thetis Firmware Version 0.3.0    ");
+    Serial.println("    Thetis Firmware Version 0.4.0    ");
     Serial.println("-------------------------------------");
     Serial.println();
 
@@ -137,7 +137,7 @@ void setup() {
     // Attach the log enable button interrupt
     attachInterrupt(LOG_EN, logButtonISR, FALLING);
 
-    #ifdef WIFI_ENABLE
+    #ifdef WIFIAP_ENABLE
         Serial.print("Starting WiFi access point...");
         sprintf(ssid, "Thetis-%03u", deviceID); // Format AP SSID based on Device ID
         if (!WiFi.softAP(ssid, "")) {
@@ -281,14 +281,14 @@ void updateSystemLED() {
     }
 }
 
-bool writeTelemetryData(fs::FS &fs, const char * path, telemetry_t &data) {
+bool writeTelemetryData() {
     #ifdef SDCARD_DEBUG
-    DEBUG_SERIAL_PORT.printf("Writing telemetry packet to: %s", path);
+    DEBUG_SERIAL_PORT.printf("Writing telemetry packet to: %s", filename);
     #endif
-    File _dataFile = fs.open(path, FILE_APPEND);
+    File _dataFile = SD.open(filename, FILE_APPEND);
     if (!_dataFile) {
         #ifdef SDCARD_DEBUG
-        DEBUG_SERIAL_PORT.printf("Could not write to %s", path);
+        DEBUG_SERIAL_PORT.printf("Could not write to %s", filename);
         #endif
         return false;
     }
@@ -334,7 +334,7 @@ bool writeTelemetryData(fs::FS &fs, const char * path, telemetry_t &data) {
     _dataFile.close();
 
     #ifdef SDCARD_DEBUG
-    DEBUG_SERIAL_PORT.printf("Wrote to: %s\n\r", path);
+    DEBUG_SERIAL_PORT.printf("Wrote to: %s\n\r", filename);
     #endif
     return true;
 }

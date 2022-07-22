@@ -47,6 +47,7 @@ const char HW_REVISION[] = "Rev F4";
 telemetry_t data;
 char filename[13];
 char timestamp[40];
+Status_t currentState;
 
 // Configuration Data
 Config cfg;
@@ -66,6 +67,7 @@ void loadConfig();
 String processor(const String &var);
 void updateSystemState();
 void updateSystemLED();
+bool writeTelemetryData(fs::FS &fs, const char * path=filename, telemetry_t &data=data);
 
 void setup() {
     isDebugging = digitalRead(USB_DETECT); // Check if USB is plugged in
@@ -277,6 +279,64 @@ void updateSystemLED() {
             pixel.setPixelColor(0, RED); pixel.show(); // Turn off LED
             break;
     }
+}
+
+bool writeTelemetryData(fs::FS &fs, const char * path, telemetry_t &data) {
+    #ifdef SDCARD_DEBUG
+    DEBUG_SERIAL_PORT.printf("Writing telemetry packet to: %s", path);
+    #endif
+    File _dataFile = fs.open(path, FILE_APPEND);
+    if (!_dataFile) {
+        #ifdef SDCARD_DEBUG
+        DEBUG_SERIAL_PORT.printf("Could not write to %s", path);
+        #endif
+        return false;
+    }
+
+    char _timestamp[32];
+    getISO8601Time_RTC(_timestamp);
+    _dataFile.print(_timestamp);
+    _dataFile.printf("%0.3f,", data.voltage);
+    _dataFile.printf("%d,", data.GPSFix);
+    _dataFile.printf("%d,", data.numSats);
+    _dataFile.printf("%d,", data.HDOP);
+    _dataFile.printf("%0.3f,", data.latitude / 1E6);
+    _dataFile.printf("%0.3f,", data.longitude / 1E6);
+    _dataFile.printf("%0.3f,", data.GPSSpeed / 1E3);
+    _dataFile.printf("%0.3f,", data.GPSCourse / 1E3);
+    _dataFile.printf("%d,", data.sysCal);
+    _dataFile.printf("%d,", data.gyroCal);
+    _dataFile.printf("%d,", data.accelCal);
+    _dataFile.printf("%d,", data.magCal);
+    _dataFile.printf("%0.3f,", data.accelX);
+    _dataFile.printf("%0.3f,", data.accelY);
+    _dataFile.printf("%0.3f,", data.accelZ);
+    _dataFile.printf("%0.3f,", data.magX);
+    _dataFile.printf("%0.3f,", data.magY);
+    _dataFile.printf("%0.3f,", data.magZ);
+    _dataFile.printf("%0.3f,", data.gyroX);
+    _dataFile.printf("%0.3f,", data.gyroY);
+    _dataFile.printf("%0.3f,", data.gyroZ);
+    _dataFile.printf("%0.3f,", data.roll);
+    _dataFile.printf("%0.3f,", data.pitch);
+    _dataFile.printf("%0.3f,", data.yaw);
+    _dataFile.printf("%0.3f,", data.linAccelX);
+    _dataFile.printf("%0.3f,", data.linAccelY);
+    _dataFile.printf("%0.3f,", data.linAccelZ);
+    _dataFile.printf("%0.3f,", data.quatW);
+    _dataFile.printf("%0.3f,", data.quatX);
+    _dataFile.printf("%0.3f,", data.quatY);
+    _dataFile.printf("%0.3f,", data.quatZ);
+    _dataFile.printf("%0.3f,", data.imuTemp);
+    _dataFile.printf("%d,", data.state);
+    _dataFile.print(data.packetSize);
+    _dataFile.println();
+    _dataFile.close();
+
+    #ifdef SDCARD_DEBUG
+    DEBUG_SERIAL_PORT.printf("Wrote to: %s\n\r", path);
+    #endif
+    return true;
 }
 
 

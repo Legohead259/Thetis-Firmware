@@ -17,6 +17,11 @@ Release sections
 
 ## Unreleased
 ### **TODO**
+- Move WiFi functions to seperate library files within ThetisLib
+
+### Added
+- Added the `writeTelemetryData()` function to be local
+- Added local declaration for `currentState`
 
 ---
 

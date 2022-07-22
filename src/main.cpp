@@ -58,11 +58,14 @@ bool isDebugging = false;
 bool isIMUAvailable = false;
 bool isLogging = false;
 bool isLogFileCreated = false;
+bool isIMUCalibrated = true;
 
 // Prototypes
 void syncInternalClockGPS();
 void loadConfig();
 String processor(const String &var);
+void updateSystemState();
+void updateSystemLED();
 
 void setup() {
     isDebugging = digitalRead(USB_DETECT); // Check if USB is plugged in
@@ -161,6 +164,10 @@ void setup() {
 }
 
 void loop() {
+    // State and LED updates
+    updateSystemState();
+    updateSystemLED();
+
     static long _lastGPSSync = millis();
     if (isGPSEnable && millis() >= _lastGPSSync+GPS_SYNC_INTERVAL*60000) { // Check GPS enabled and if GPS_SYNC_INTERVAL time has passed
         syncInternalClockGPS();
@@ -179,13 +186,13 @@ void loop() {
                     timestamp,
                     accel.acceleration.x, accel.acceleration.y, accel.acceleration.z,
                     linAccel.x, linAccel.y, linAccel.z);
-            appendFile(SD, filename, _writeBuf);
+            if (!appendFile(SD, filename, _writeBuf)) { // Check if file append was successful; enter error state if not
+                while(true) blinkCode(FILE_ERROR_CODE);
+            }
         }
 
         _lastIMUPoll = millis(); // Reset IMU poll timer
     }
-
-    // TODO: Implement server refresh at 1 Hz, if client connected
 
     static uint8_t _oldButtonPresses = 0;
     if (logButtonPresses != _oldButtonPresses && !digitalRead(LOG_EN) && millis() >= logButtonStartTime+LOG_BTN_HOLD_TIME) { // Check if BTN0 has been pressed and has been held for sufficient time
@@ -200,6 +207,12 @@ void loop() {
         _oldButtonPresses = logButtonPresses;
     }
 }
+
+
+// =========================
+// === UTILITY FUNCTIONS ===
+// =========================
+
 
 void syncInternalClockGPS() {
     Serial.println();
@@ -230,6 +243,46 @@ void syncInternalClockGPS() {
     }
     Serial.println();
 }
+
+void updateSystemState() {
+    if (!isIMUCalibrated && !data.GPSFix)                       currentState = STANDBY;
+    else if (isIMUCalibrated && !data.GPSFix && !isLogging)     currentState = READY_NO_GPS;
+    else if (isIMUCalibrated && data.GPSFix && !isLogging)      currentState = READY_GPS;
+    else if (isIMUCalibrated && !data.GPSFix && isLogging)      currentState = LOGGING_NO_GPS;
+    else if (isIMUCalibrated && data.GPSFix && isLogging)       currentState = LOGGING_GPS;
+    data.state = currentState;
+}
+
+void updateSystemLED() {
+    switch (data.state) {
+        case LOGGING_NO_GPS:
+            pixel.setPixelColor(0, BLUE); pixel.show(); // Glow solid blue
+            break;
+        case LOGGING_GPS:
+            pixel.setPixelColor(0, GREEN); pixel.show(); // Glow solid green
+            break;
+        case READY_NO_GPS:
+            pulseLED(BLUE); // Pulse blue
+            break;
+        case READY_GPS:
+            pulseLED(GREEN); // Pulse green
+            break;
+        case STANDBY:
+            pixel.setPixelColor(0, 255, 191, 0); pixel.show(); // Glow solid amber
+            break;
+        case BOOTING:
+            pulseLED(PURPLE); // Pulse purple
+            break;
+        default:
+            pixel.setPixelColor(0, RED); pixel.show(); // Turn off LED
+            break;
+    }
+}
+
+
+// ======================
+// === WIFI FUNCTIONS ===
+// ======================
 
 String processor(const String &var) {
     Serial.print(var); Serial.print(": ");

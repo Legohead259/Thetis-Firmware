@@ -106,7 +106,7 @@ void setup() {
     Serial.println("done!");
 
     Serial.print("Loading configurations...");
-    if (cfg.begin(SPIFFS, "/config.cfg", 127)) {
+    if (cfg.begin("/config.cfg", 127)) {
         Serial.println();
         while (cfg.readNextSetting()) {
             if (cfg.nameIs("id")) {
@@ -201,7 +201,7 @@ void loop() {
     if (logButtonPresses != _oldButtonPresses && !digitalRead(LOG_EN) && millis() >= logButtonStartTime+LOG_BTN_HOLD_TIME) { // Check if BTN0 has been pressed and has been held for sufficient time
         isLogging = !isLogging;
         if (!isLogFileCreated) {
-            if (!initLogFile(SD, filename, "Timestamp (ISO 8601),ax,ay,az,lin_ax,lin_ay,lin_az\n")) { // Initialize log file and check if good
+            if (!initTelemetryLogFile(SD, filename, "Timestamp (ISO 8601),ax,ay,az,lin_ax,lin_ay,lin_az\n")) { // Initialize log file and check if good
                 while(true) blinkCode(FILE_ERROR_CODE); // block further code execution
             }
             isLogFileCreated = true;

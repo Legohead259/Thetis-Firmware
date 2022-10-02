@@ -1,3 +1,5 @@
 [submodule "lib/ThetisLib"]
 	path = lib/ThetisLib
 	url = https://github.com/Legohead259/ThetisLib.git
+[submodule "ThetisLib"]
+	branch = WiFi-Development

@@ -3,7 +3,7 @@
  * @version 0.3.0
  * 
  * @brief This firmware variant enables Thetis to act as an embedded accelerometer.
- * Accelerometer values will be logged to the onboard storage device and can be accesible via the WiFi interface, if enabled.
+ * Accelerometer values will be logged to the onboard storage device and can be accessible via the WiFi interface, if enabled.
  * This firmware will work on a barebones Thetis that does not have a GPS module.
  * Currently compatible with the following boards:
  *      - RevF4 with LSM6DSO32 IMU
@@ -14,6 +14,7 @@
  * Version 0.2.2 - Fixed log file write issue and implemented log enable functionality
  * Version 0.2.3 - Fixed major bug with the device crashing on log enabled
  * Version 0.3.0 - Added loading configurations from file on SPIFFS; added WiFi hotspot functionality
+ * Version 1.0.0 - Complete codebase refactor to make development easier and streamline multiple things; ThetisLib will be deprecated
  * 
  * @author Braidan Duffy
  * @date June 10, 2022

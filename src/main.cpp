@@ -45,7 +45,6 @@ const char HW_REVISION[] = "Rev F4";
 #define IMU_POLL_RATE 52.0 // Hz
 #define IMU_POLL_INTERVAL 1000/IMU_POLL_RATE // ms
 
-telemetry_t data;
 char filename[13];
 char timestamp[40];
 Status_t currentState;

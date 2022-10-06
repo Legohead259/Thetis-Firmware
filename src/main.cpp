@@ -27,6 +27,9 @@ bool isLogFileCreated = false;
 bool isIMUCalibrated = true;
 
 void setup() {
+    // Casting to int is important as just uint8_t types will invoke the "slave" begin, not the master
+    Wire.begin((int) SDA, (int) SCL);
+
     isDebugging = digitalRead(USB_DETECT); // Check if USB is plugged in
     if (isDebugging) {
         Serial.begin(115200);
@@ -45,6 +48,8 @@ void setup() {
     if (!initDSO32()) { // Check IMU initialization
         while(true) blinkCode(IMU_ERROR_CODE); // Block further code execution
     }
+    
+    initFusion(); // Initialize the sensor fusion algorithms
 
     if (!initGPS()) { // Initialize GPS and check if good
         while(true) blinkCode(GPS_ERROR_CODE); // Block further code execution
@@ -81,37 +86,33 @@ void loop() {
     updateSystemLED();
 
     static long _lastGPSSync = millis();
-    if (configData.gpsEnable && millis() >= _lastGPSSync+GPS_SYNC_INTERVAL*60000) { // Check GPS enabled and if GPS_SYNC_INTERVAL time has passed
+    if ((millis() - _lastGPSSync) >= GPS_SYNC_INTERVAL*60000) { // Check GPS enabled and if GPS_SYNC_INTERVAL time has passed
         syncInternalClockGPS();
         _lastGPSSync = millis(); // Reset GPS sync timer flag
     }
 
-    // static long _lastIMUPoll = millis();
-    // if (millis() >= _lastIMUPoll+IMU_POLL_INTERVAL) { // Check if IMU_POLL_INTERVAL time has passed
-    //     pollDSO32();
+    // Update sensor fusion algorithm and data structure
+    static long _lastIMUPoll = millis();
+    if ((millis() - _lastIMUPoll) >= imuPollInterval) { // Check if IMU_POLL_INTERVAL time has passed
+        updateFusion();
 
-    //     // Write data to log file
-    //     if (isLogging) {
-    //         char _writeBuf[128];
-    //         getISO8601Time_RTC(timestamp);
-    //         sprintf(_writeBuf, "%s,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f\n",  
-    //                 timestamp,
-    //                 accel.acceleration.x, accel.acceleration.y, accel.acceleration.z,
-    //                 linAccel.x, linAccel.y, linAccel.z);
-    //         if (!appendFile(SD, filename, _writeBuf)) { // Check if file append was successful; enter error state if not
-    //             while(true) blinkCode(FILE_ERROR_CODE);
-    //         }
-    //     }
+        // Write data to log file
+        if (isLogging) {
+            if (!logData(SD)) {
+                // TODO: Figure out a better way to handle this type of error
+                while (true) blinkCode(FILE_ERROR_CODE); // Block further code execution
+            }
+        }
 
-    //     _lastIMUPoll = millis(); // Reset IMU poll timer
-    // }
+        _lastIMUPoll = millis(); // Reset IMU poll timer
+    }
 
     // Logging handler
     static uint8_t _oldButtonPresses = 0;
     if (logButtonPresses != _oldButtonPresses && !digitalRead(LOG_EN) && millis() >= logButtonStartTime+LOG_BTN_HOLD_TIME) { // Check if BTN0 has been pressed and has been held for sufficient time
         isLogging = !isLogging;
         if (!isLogFileCreated) {
-            if (!initTelemetryLogFile(SD)) { // Initialize log file and check if good
+            if (!initDataLogFile(SD)) { // Initialize log file and check if good
                 while(true) blinkCode(FILE_ERROR_CODE); // block further code execution
             }
             isLogFileCreated = true;

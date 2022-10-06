@@ -17,9 +17,15 @@ Release sections
 
 ## Unreleased
 ### **TODO**
-- Move WiFi functions to seperate library files within ThetisLib
+- Move WiFi functions to separate library files within ThetisLib
 - Implement HTTP API ([#7](https://github.com/Legohead259/Thetis-Firmware/issues/7))
 
+### Added
+- Added a boards/ and variants/ folder to the workspace to hold board specific information for each development board (deprecates [Thetis Package](https://github.com/Legohead259))
+
+---
+
+## 0.3.1 - 2022-07-22
 ### Added
 - Added the `writeTelemetryData()` function to be local
 - Added local declaration for `currentState`

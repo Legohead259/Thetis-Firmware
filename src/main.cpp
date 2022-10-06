@@ -63,37 +63,16 @@ void setup() {
     }
     config.loadConfigurations(); // Load in configuration data from the file
    
-    syncInternalClockGPS();
+    syncInternalClockGPS(); // Attempt to sync internal clock to GPS, if it has a fix already
+
+    #ifdef WIFI_AP_ENABLE
+    if (!initWIFI_AP()) { // Start WIFI Access Point
+        while (true) blinkCode(RADIO_ERROR_CODE); // Block code execution
+    } 
+    #endif
 
     // Attach the log enable button interrupt
     attachInterrupt(LOG_EN, logButtonISR, FALLING);
-
-    #ifdef WIFIAP_ENABLE
-        Serial.print("Starting WiFi access point...");
-        sprintf(ssid, "Thetis-%03u", deviceID); // Format AP SSID based on Device ID
-        if (!WiFi.softAP(ssid, "")) {
-            Serial.println("Failed to start access point!");
-            while (true) blinkCode(RADIO_ERROR_CODE); // Block code execution
-        }
-        Serial.println("done!");
-
-        IPAddress IP = WiFi.softAPIP();
-        Serial.print("AP IP address: ");
-        Serial.println(IP);
-
-        // Route for root / web page
-        server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-            request->send(SPIFFS, "/index.html", String(), false, processor);
-        });
-        
-        // Route to load style.css file
-        server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request){
-            request->send(SPIFFS, "/style.css", "text/css");
-        });
-
-        // Start server
-        server.begin();
-    #endif // WIFI_ENABLE
 }
 
 void loop() {

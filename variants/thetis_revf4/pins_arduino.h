@@ -25,8 +25,8 @@ static const uint8_t SDA = 33;
 static const uint8_t SCL = 34;
 
 // SPI Bus
-static const uint8_t SS    = 26;
-static const uint8_t SD_CS = 26;
+static const uint8_t SS    = 21; // In reality, this is 26, but the ESP32-S2 with PSRAM crashes when Pin 26 is used
+static const uint8_t SD_CS = 21; // In reality, this is 26, but the ESP32-S2 with PSRAM crashes when Pin 26 is used
 static const uint8_t MOSI  = 35;
 static const uint8_t MISO  = 37;
 static const uint8_t SCK   = 36;

@@ -85,14 +85,22 @@ void loop() {
     updateSystemState();
     updateSystemLED();
 
-    static long _lastGPSSync = millis();
-    if ((millis() - _lastGPSSync) >= GPS_SYNC_INTERVAL*60000) { // Check GPS enabled and if GPS_SYNC_INTERVAL time has passed
+    // Poll GPS and update data structure
+    static unsigned long _lastGPSPoll = millis();
+    if ((millis() - _lastGPSPoll) >= GPS_POLL_INTERVAL) { // Check if GPS_POLL_INTERVAL has passed
+        pollGPS();
+        _lastGPSPoll = millis(); // REset GPS poll timer
+    }
+
+    // Timestamp synchronization
+    static unsigned long _lastGPSSync = millis();
+    if ((millis() - _lastGPSSync) >= GPS_SYNC_INTERVAL*60000) { // Check if GPS_SYNC_INTERVAL has passed
         syncInternalClockGPS();
-        _lastGPSSync = millis(); // Reset GPS sync timer flag
+        _lastGPSSync = millis(); // Reset GPS sync timer
     }
 
     // Update sensor fusion algorithm and data structure
-    static long _lastIMUPoll = millis();
+    static unsigned long _lastIMUPoll = millis();
     if ((millis() - _lastIMUPoll) >= imuPollInterval) { // Check if IMU_POLL_INTERVAL time has passed
         updateFusion();
 

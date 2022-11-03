@@ -14,7 +14,7 @@
  * 
  * @author Braidan Duffy
  * @date June 10, 2022
- *       Ocotober 4, 2022 (last edit)
+ *       October 4, 2022 (last edit)
 **/
 #include <ThetisLib.h>
 
@@ -37,7 +37,7 @@ void setup() {
     }
 
     Serial.println("-------------------------------------");
-    Serial.println("    Thetis Firmware Version 1.0.0    ");
+    Serial.println("    Thetis Firmware Version 1.1.0    ");
     Serial.println("-------------------------------------");
     Serial.println();
 
@@ -102,16 +102,17 @@ void loop() {
     // Update sensor fusion algorithm and data structure
     static unsigned long _lastIMUPoll = millis();
     if ((millis() - _lastIMUPoll) >= imuPollInterval) { // Check if IMU_POLL_INTERVAL time has passed
+        unsigned long _fusionStartTime = millis();
         updateFusion();
 
         // Write data to log file
         if (isLogging) {
-            if (!logData(SD)) {
+            if (!logDataBin(SD)) {
                 // TODO: Figure out a better way to handle this type of error
                 while (true) blinkCode(FILE_ERROR_CODE); // Block further code execution
             }
         }
-
+        Serial.printf("Time to process: %d ms\r\n", millis() - _fusionStartTime);
         _lastIMUPoll = millis(); // Reset IMU poll timer
     }
 

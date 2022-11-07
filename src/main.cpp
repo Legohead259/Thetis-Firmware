@@ -1,6 +1,6 @@
 /**
  * @file Thetis Firmware
- * @version 1.0.0
+ * @version 1.1.0
  * 
  * @brief 
  * 
@@ -11,13 +11,15 @@
  * Version 0.2.3 - Fixed major bug with the device crashing on log enabled
  * Version 0.3.0 - Added loading configurations from file on SPIFFS; added WiFi hotspot functionality
  * Version 1.0.0 - Complete codebase refactor to make development easier and streamline multiple things; ThetisLib will be deprecated
+ * Version 1.1.0 - Optimizing logging process for increased sample rate
  * 
  * @author Braidan Duffy
  * @date June 10, 2022
- *       October 4, 2022 (last edit)
+ *       November 4, 2022 (last edit)
 **/
 #include <ThetisLib.h>
 
+#define logInterval 1000/32.0f // sample at 32 Hz
 
 // Flags
 bool isDebugging = false;
@@ -89,7 +91,7 @@ void loop() {
     static unsigned long _lastGPSPoll = millis();
     if ((millis() - _lastGPSPoll) >= GPS_POLL_INTERVAL) { // Check if GPS_POLL_INTERVAL has passed
         pollGPS();
-        _lastGPSPoll = millis(); // REset GPS poll timer
+        _lastGPSPoll = millis(); // Reset GPS poll timer
     }
 
     // Timestamp synchronization
@@ -105,15 +107,20 @@ void loop() {
         unsigned long _fusionStartTime = millis();
         updateFusion();
 
-        // Write data to log file
-        if (isLogging) {
-            if (!logDataBin(SD)) {
-                // TODO: Figure out a better way to handle this type of error
-                while (true) blinkCode(FILE_ERROR_CODE); // Block further code execution
-            }
-        }
-        Serial.printf("Time to process: %d ms\r\n", millis() - _fusionStartTime);
+        Serial.printf("Time to process sensor fusion: %d ms\r\n", millis() - _fusionStartTime); // DEBUG
         _lastIMUPoll = millis(); // Reset IMU poll timer
+    }
+
+    // Write data to log file
+    static unsigned long _lastLogTime = millis();
+    if (isLogging && (millis() - _lastLogTime) >= logInterval) {
+        unsigned long _logStartTime = millis();
+        if (!logData()) {
+            // TODO: Figure out a better way to handle this type of error
+            while (true) blinkCode(FILE_ERROR_CODE); // Block further code execution
+        }
+        Serial.printf("Time to log data: %d ms\r\n", millis() - _logStartTime); // DEBUG
+        _lastLogTime = millis(); // Reset log timer flag
     }
 
     // Logging handler

@@ -1,7 +1,8 @@
 """
 """
 from ctypes import *
-from struct import Struct
+import matplotlib.pyplot as plt
+import datetime as DT
 
 class YourStruct(Structure):
     _fields_ = [('epoch', c_long),
@@ -56,10 +57,34 @@ class YourStruct(Structure):
                 ('imuTemp', c_float),
                 ('state', c_uint8)]
 
-with open('scripts/data/log_005.bin', 'rb') as file:
-    result = []
+with open('scripts/data/log_003.bin', 'rb') as file:
+    epoch_data = []
+    rawAccel_data = []
+    accel_data = []
+
     x = YourStruct()
     while file.readinto(x) == sizeof(x):
-        result.append((x.rawAccelX, x.rawAccelY, x.rawAccelZ))
+        timestamp = DT.datetime.utcfromtimestamp(x.epoch) + DT.timedelta(milliseconds=x.mSecond)
+        epoch_data.append(timestamp)
+        rawAccel_data.append((x.rawAccelX, x.rawAccelY, x.rawAccelZ))
+        accel_data.append((x.accelX, x.accelY, x.accelZ))
+        # accel_data.append((x.linAccelX, x.linAccelY, x.linAccelZ))
+        
 
-print(result)
+# print(result)
+# print(epoch_data)
+
+fig, ax = plt.subplots(2)
+ax[0].plot(epoch_data, rawAccel_data)
+ax[1].plot(epoch_data, accel_data)
+
+ax[0].set(xlabel='Time', ylabel='Acceleration (m/s/s)',
+       title='Raw Acceleration')
+ax[1].set(xlabel='Time', ylabel='Acceleration (m/s/s)',
+       title='Filtered Acceleration')
+ax[0].grid()
+ax[1].grid()
+ax[0].legend(["X", "Y", "Z"])
+
+# fig.savefig("test.png")
+plt.show()

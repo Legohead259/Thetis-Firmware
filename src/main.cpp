@@ -115,7 +115,7 @@ void loop() {
     static unsigned long _lastLogTime = millis();
     if (isLogging && (millis() - _lastLogTime) >= logInterval) {
         unsigned long _logStartTime = millis();
-        if (!logData()) {
+        if (!logDataBin(SD)) {
             // TODO: Figure out a better way to handle this type of error
             while (true) blinkCode(FILE_ERROR_CODE); // Block further code execution
         }

@@ -57,7 +57,7 @@ class YourStruct(Structure):
                 ('imuTemp', c_float),
                 ('state', c_uint8)]
 
-with open('scripts/data/log_003.bin', 'rb') as file:
+with open('scripts/data/log_007.bin', 'rb') as file:
     epoch_data = []
     rawAccel_data = []
     accel_data = []

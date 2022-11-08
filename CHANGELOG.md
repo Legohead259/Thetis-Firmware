@@ -15,13 +15,48 @@ Release sections
 ### Security 
 -->
 
-## Unreleased
-### **TODO**
-- Move WiFi functions to separate library files within ThetisLib
-- Implement HTTP API ([#7](https://github.com/Legohead259/Thetis-Firmware/issues/7))
+## [Unreleased] 1.2.0 -
+### TODO
+
+## [Unreleased] 1.1.0 - 
+
+### TODO
+- Add ability to configure logging rate from configuration file
+- Add ability to configure fusion update rate from configuration file
 
 ### Added
-- Added a boards/ and variants/ folder to the workspace to hold board specific information for each development board (deprecates [Thetis Package](https://github.com/Legohead259))
+- Added [example script](scripts/decode_log_file.py) to decode log file data retrieved from device
+- Added several debug timing printouts
+
+### Changed
+- Changed the logging format to be binary instead of ASCII
+- Modified the logging procedure to separate the fusion update function from the logging function
+
+---
+
+## 1.0.1 - 2022-10-13
+
+### Added
+- Added a `gpsPoll()` call to the main execution loop
+- Added ability to log raw IMU data using compiler flags
+
+---
+
+## 1.0.0 - 2022-10-06 
+
+### Added
+- Added a boards/ and variants/ folder to the workspace to hold board specific information for each development board (deprecates [Thetis Package](https://github.com/Legohead259/Thetis-Package.git))
+- Added git submodule for [ThetisLib](https://github.com/Legohead259/ThetisLib.git)
+- Implemented data collection and logging functionality
+
+### Changed
+- Complete code refactor to reorganize and make easier to read
+- Migrated many functions over to independent files inside `ThetisLib`
+
+### Fixed
+- Fixed multiple definition error with `data`
+- Changed `SD_CS` and `SS` pin definitions to fix PSRAM crash issue
+- 
 
 ---
 

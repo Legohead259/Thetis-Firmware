@@ -103,7 +103,7 @@ void loop() {
 
     // Update sensor fusion algorithm and data structure
     static unsigned long _lastIMUPoll = millis();
-    if ((millis() - _lastIMUPoll) >= imuPollInterval) { // Check if IMU_POLL_INTERVAL time has passed
+    if ((millis() - _lastIMUPoll) >= fusionUpdateInterval) { // Check if IMU_POLL_INTERVAL time has passed
         unsigned long _fusionStartTime = millis();
         updateFusion();
 

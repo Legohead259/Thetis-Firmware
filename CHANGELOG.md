@@ -18,8 +18,8 @@ Release sections
 ## [Unreleased] 1.2.0 -
 ### TODO
 
-## [Unreleased] 1.1.1 - 
-### TODO
+## 1.1.1 - 2022-11-20
+### Fixed
 - Fix [#20](https://github.com/Legohead259/Thetis-Firmware/issues/20)
 
 ## 1.1.0 - 2022-11-20 

@@ -1,6 +1,6 @@
 /**
  * @file Thetis Firmware
- * @version 1.0.0
+ * @version 1.1.0
  * 
  * @brief 
  * 
@@ -10,14 +10,17 @@
  * Version 0.2.2 - Fixed log file write issue and implemented log enable functionality
  * Version 0.2.3 - Fixed major bug with the device crashing on log enabled
  * Version 0.3.0 - Added loading configurations from file on SPIFFS; added WiFi hotspot functionality
- * Version 1.0.0 - Complete codebase refactor to make development easier and streamline multiple things; ThetisLib will be deprecated
+ * Version 1.0.0 - Complete codebase refactor to make development easier and streamline multiple things
+ * Version 1.1.0 - Optimizing logging process for increased sample rate; added more configuration options
  * 
  * @author Braidan Duffy
  * @date June 10, 2022
- *       Ocotober 4, 2022 (last edit)
+ *       November 4, 2022 (last edit)
 **/
 #include <ThetisLib.h>
 
+float logFrequency = 32; // Hz - Default: 32
+float logInterval = 1000.0/logFrequency; // Time between log updates [ms]
 
 // Flags
 bool isDebugging = false;
@@ -25,6 +28,8 @@ bool isIMUAvailable = false;
 bool isLogging = false;
 bool isLogFileCreated = false;
 bool isIMUCalibrated = true;
+
+void updateSettings();
 
 void setup() {
     // Casting to int is important as just uint8_t types will invoke the "slave" begin, not the master
@@ -37,7 +42,7 @@ void setup() {
     }
 
     Serial.println("-------------------------------------");
-    Serial.println("    Thetis Firmware Version 1.0.0    ");
+    Serial.println("    Thetis Firmware Version 1.1.0    ");
     Serial.println("-------------------------------------");
     Serial.println();
 
@@ -67,7 +72,8 @@ void setup() {
         while (true) blinkCode(FILE_ERROR_CODE); // Block code execution
     }
     config.loadConfigurations(); // Load in configuration data from the file
-   
+    updateSettings();
+
     syncInternalClockGPS(); // Attempt to sync internal clock to GPS, if it has a fix already
 
     #ifdef WIFI_AP_ENABLE
@@ -89,7 +95,7 @@ void loop() {
     static unsigned long _lastGPSPoll = millis();
     if ((millis() - _lastGPSPoll) >= GPS_POLL_INTERVAL) { // Check if GPS_POLL_INTERVAL has passed
         pollGPS();
-        _lastGPSPoll = millis(); // REset GPS poll timer
+        _lastGPSPoll = millis(); // Reset GPS poll timer
     }
 
     // Timestamp synchronization
@@ -101,18 +107,24 @@ void loop() {
 
     // Update sensor fusion algorithm and data structure
     static unsigned long _lastIMUPoll = millis();
-    if ((millis() - _lastIMUPoll) >= imuPollInterval) { // Check if IMU_POLL_INTERVAL time has passed
+    if ((millis() - _lastIMUPoll) >= fusionUpdateInterval) { // Check if IMU_POLL_INTERVAL time has passed
+        unsigned long _fusionStartTime = millis();
         updateFusion();
 
-        // Write data to log file
-        if (isLogging) {
-            if (!logData(SD)) {
-                // TODO: Figure out a better way to handle this type of error
-                while (true) blinkCode(FILE_ERROR_CODE); // Block further code execution
-            }
-        }
-
+        Serial.printf("Time to process sensor fusion: %d ms\r\n", millis() - _fusionStartTime); // DEBUG
         _lastIMUPoll = millis(); // Reset IMU poll timer
+    }
+
+    // Write data to log file
+    static unsigned long _lastLogTime = millis();
+    if (isLogging && (millis() - _lastLogTime) >= logInterval) {
+        unsigned long _logStartTime = millis();
+        if (!logData(SD)) {
+            // TODO: Figure out a better way to handle this type of error
+            while (true) blinkCode(FILE_ERROR_CODE); // Block further code execution
+        }
+        Serial.printf("Time to log data: %d ms\r\n", millis() - _logStartTime); // DEBUG
+        _lastLogTime = millis(); // Reset log timer flag
     }
 
     // Logging handler
@@ -128,4 +140,18 @@ void loop() {
         digitalWrite(LED_BUILTIN, isLogging);
         _oldButtonPresses = logButtonPresses;
     }
+}
+
+void updateSettings() {
+    // -----Sensor Configurations-----
+    dso32.setAccelRange(getAccelRange(configData.accelRange));
+    dso32.setGyroRange(getGyroRange(configData.gyroRange));
+    dso32.setAccelDataRate(getDataRate(configData.imuDataRate));
+    dso32.setGyroDataRate(getDataRate(configData.imuDataRate));
+    // TODO: Add magnetometer (LIS3MDL)
+    fusionUpdateInterval = 1000/configData.fusionUpdateRate;
+
+    // -----Logging Configurations-----
+    logFrequency = configData.loggingUpdateRate;
+    logInterval = 1000/logFrequency;
 }

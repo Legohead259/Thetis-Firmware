@@ -74,6 +74,7 @@ void setup() {
     config.loadConfigurations(); // Load in configuration data from the file
     updateSettings();
 
+    pollGPS();
     syncInternalClockGPS(); // Attempt to sync internal clock to GPS, if it has a fix already
 
     #ifdef WIFI_AP_ENABLE

@@ -12,6 +12,7 @@
  * Version 0.3.0 - Added loading configurations from file on SPIFFS; added WiFi hotspot functionality
  * Version 1.0.0 - Complete codebase refactor to make development easier and streamline multiple things
  * Version 1.1.0 - Optimizing logging process for increased sample rate; added more configuration options
+ * Version 1.1.1 - Fixed issue where internal RTC was not syncing to GPS time on startup
  * 
  * @author Braidan Duffy
  * @date June 10, 2022
@@ -42,7 +43,7 @@ void setup() {
     }
 
     Serial.println("-------------------------------------");
-    Serial.println("    Thetis Firmware Version 1.1.0    ");
+    Serial.println("    Thetis Firmware Version 1.1.1    ");
     Serial.println("-------------------------------------");
     Serial.println();
 

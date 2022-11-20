@@ -18,15 +18,18 @@ Release sections
 ## [Unreleased] 1.2.0 -
 ### TODO
 
-## [Unreleased] 1.1.0 - 
-
+## [Unreleased] 1.1.1 - 
 ### TODO
-- Add ability to configure logging rate from configuration file
-- Add ability to configure fusion update rate from configuration file
+- Fix [#20](https://github.com/Legohead259/Thetis-Firmware/issues/20)
+
+## 1.1.0 - 2022-11-20 
 
 ### Added
 - Added [example script](scripts/decode_log_file.py) to decode log file data retrieved from device
 - Added several debug timing printouts
+- Added ability to configure logging rate from configuration file
+- Added ability to configure sensor fusion update rate from configuration file
+- Add ability to change sensor parameters from the configuration file
 
 ### Changed
 - Changed the logging format to be binary instead of ASCII

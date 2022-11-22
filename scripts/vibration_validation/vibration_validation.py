@@ -47,9 +47,9 @@ from math import pi
 import numpy as np
 
 # Constants and measurements
-FREQUENCY = 3.0 # Hz
+FREQUENCY = 3.3 # Hz
 OMEGA = 2*pi*FREQUENCY # rad/sec
-AMPLITUDE = 0.024/2 # m
+AMPLITUDE = 0.056/2 # m
 
 
 class ThetisData(Structure):
@@ -109,7 +109,7 @@ class ThetisData(Structure):
                 ('state', c_uint8)]
 
 # Read the data log file into memory
-with open('data/log_005.bin', 'rb') as file:
+with open('data/log_012.bin', 'rb') as file:
     epoch_data = []
     raw_accel_data = []
     accel_data = []
@@ -117,26 +117,41 @@ with open('data/log_005.bin', 'rb') as file:
     data = ThetisData()
     while file.readinto(data) == sizeof(data):
         timestamp = dt.datetime.utcfromtimestamp(data.epoch) + dt.timedelta(milliseconds=data.mSecond)
-        epoch_data.append(timestamp.timestamp())
-        raw_accel_data.append((data.rawAccelX, data.rawAccelY, data.rawAccelZ))
+        epoch_data.append(timestamp)
+        raw_accel_data.append((data.rawAccelX))
         # accel_data.append((data.accelX, data.accelY, data.accelZ))
         accel_data.append(data.accelX)
+    print(len(epoch_data)) #DEBUG
 
 # Generate theoretical sinusoidal data
-START_INDEX = 68
-TIME_WIDTH = 40
+START_INDEX = 200
+TIME_WIDTH = 200
 END_INDEX = START_INDEX + TIME_WIDTH
 
 t_epoch_data = np.linspace(0, 2, 1000)
 t_sine_data = [pow(OMEGA,2) * AMPLITUDE * np.sin(OMEGA * t_epoch_data[x]) for x in range(len(t_epoch_data))]
 # print(t_sine_data)
 
-x_meas = [epoch_data[START_INDEX + x]-epoch_data[START_INDEX] for x in range(TIME_WIDTH)]
+x_meas = [epoch_data[START_INDEX + x].timestamp()-epoch_data[START_INDEX].timestamp() for x in range(TIME_WIDTH)]
 
-plt.title("Comparison of Measured and Theoretical Accelerations")
-plt.plot(x_meas, accel_data[START_INDEX:END_INDEX])
-plt.plot(t_epoch_data, t_sine_data)
-plt.xlabel("Time [s]")
-plt.ylabel("Accelerations [m/s/s]")
-plt.legend(["Measured", "Theoretical"])
+# Make plots
+fig_accel = plt.figure(1)
+ax_accel = fig_accel.add_subplot(1,1,1)
+ax_accel.set_title("Comparison of Raw and Filtered Accelerations")
+ax_accel.plot(epoch_data, raw_accel_data)
+ax_accel.plot(epoch_data, accel_data)
+ax_accel.set_xlabel("Timestamp")
+ax_accel.set_ylabel("Accelerations [m/s/s]")
+ax_accel.legend(["Raw", "Kalman Filtered"])
+
+
+fig_comp = plt.figure(2)
+ax_comp = fig_comp.add_subplot(1,1,1)
+ax_comp.set_title("Comparison of Measured and Theoretical Accelerations")
+ax_comp.plot(x_meas, accel_data[START_INDEX:END_INDEX])
+ax_comp.plot(t_epoch_data, t_sine_data)
+ax_comp.set_xlabel("Time [s]")
+ax_comp.set_ylabel("Accelerations [m/s/s]")
+ax_comp.legend(["Measured", "Theoretical"])
+
 plt.show()

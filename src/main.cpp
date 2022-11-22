@@ -120,12 +120,12 @@ void loop() {
     // Write data to log file
     static unsigned long _lastLogTime = millis();
     if (isLogging && (millis() - _lastLogTime) >= logInterval) {
-        unsigned long _logStartTime = millis();
+        unsigned long _logStartTime = micros();
         if (!logData(SD)) {
             // TODO: Figure out a better way to handle this type of error
             while (true) blinkCode(FILE_ERROR_CODE); // Block further code execution
         }
-        Serial.printf("Time to log data: %d ms\r\n", millis() - _logStartTime); // DEBUG
+        Serial.printf("Time to log data: %d us\r\n", micros() - _logStartTime); // DEBUG
         _lastLogTime = millis(); // Reset log timer flag
     }
 
@@ -138,6 +138,12 @@ void loop() {
                 while(true) blinkCode(FILE_ERROR_CODE); // block further code execution
             }
             isLogFileCreated = true;
+        }
+        if (isLogging) {
+            _dataFile = SD.open(telemetryLogFilename, FILE_APPEND);
+        }
+        else {
+            _dataFile.close();
         }
         digitalWrite(LED_BUILTIN, isLogging);
         _oldButtonPresses = logButtonPresses;

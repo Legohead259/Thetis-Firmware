@@ -121,11 +121,10 @@ with open('data/log_012.bin', 'rb') as file:
         raw_accel_data.append((data.rawAccelX))
         # accel_data.append((data.accelX, data.accelY, data.accelZ))
         accel_data.append(data.accelX)
-    print(len(epoch_data)) #DEBUG
 
 # Generate theoretical sinusoidal data
-START_INDEX = 200
-TIME_WIDTH = 200
+START_INDEX = 0
+TIME_WIDTH = len(epoch_data)
 END_INDEX = START_INDEX + TIME_WIDTH
 
 t_epoch_data = np.linspace(0, 2, 1000)
@@ -153,5 +152,9 @@ ax_comp.plot(t_epoch_data, t_sine_data)
 ax_comp.set_xlabel("Time [s]")
 ax_comp.set_ylabel("Accelerations [m/s/s]")
 ax_comp.legend(["Measured", "Theoretical"])
+
+print("Number of samples: ", len(epoch_data)) #DEBUG
+print("Total Sample Time: ", max(x_meas)) #DEBUG
+print("Average Sample Rate: ", len(epoch_data) / max(x_meas)) #DEBUG
 
 plt.show()

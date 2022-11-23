@@ -13,6 +13,7 @@
  * Version 1.0.0 - Complete codebase refactor to make development easier and streamline multiple things
  * Version 1.1.0 - Optimizing logging process for increased sample rate; added more configuration options
  * Version 1.1.1 - Fixed issue where internal RTC was not syncing to GPS time on startup
+ * Version 1.1.2 - Enabled faster logging rates up to ~90 Hz
  * 
  * @author Braidan Duffy
  * @date June 10, 2022
@@ -43,7 +44,7 @@ void setup() {
     }
 
     Serial.println("-------------------------------------");
-    Serial.println("    Thetis Firmware Version 1.1.1    ");
+    Serial.println("    Thetis Firmware Version 1.1.2    ");
     Serial.println("-------------------------------------");
     Serial.println();
 

@@ -14,6 +14,7 @@
  * Version 1.1.0 - Optimizing logging process for increased sample rate; added more configuration options
  * Version 1.1.1 - Fixed issue where internal RTC was not syncing to GPS time on startup
  * Version 1.1.2 - Enabled faster logging rates up to ~90 Hz
+ * Version 1.1.3 - Massive overhaul to logging system
  * 
  * @author Braidan Duffy
  * @date June 10, 2022
@@ -21,8 +22,10 @@
 **/
 #include <ThetisLib.h>
 
-float logFrequency = 32; // Hz - Default: 32
-float logInterval = 1000.0/logFrequency; // Time between log updates [ms]
+float logFrequency; // Hz 
+float logInterval;  // Time between log updates [ms]
+unsigned long logButtonPresses;
+unsigned long logButtonStartTime;
 
 // Flags
 bool isDebugging = false;
@@ -32,19 +35,22 @@ bool isLogFileCreated = false;
 bool isIMUCalibrated = true;
 
 void updateSettings();
+void IRAM_ATTR logButtonISR();
 
 void setup() {
     // Casting to int is important as just uint8_t types will invoke the "slave" begin, not the master
     Wire.begin((int) SDA, (int) SCL);
 
     isDebugging = digitalRead(USB_DETECT); // Check if USB is plugged in
-    if (isDebugging) {
+    if (isDebugging && diagPrintLogger.begin(&Serial, LogLevel::VERBOSE)) {
         Serial.begin(115200);
         while(!Serial); // Wait for serial connection
     }
+    
+    diagLogger = isDebugging ? &diagPrintLogger : &diagFileLogger;
 
     Serial.println("-------------------------------------");
-    Serial.println("    Thetis Firmware Version 1.1.2    ");
+    Serial.println("    Thetis Firmware Version 1.1.3    ");
     Serial.println("-------------------------------------");
     Serial.println();
 
@@ -52,17 +58,7 @@ void setup() {
         while(true); // Block further code execution
     }
 
-    if (!initDSO32()) { // Check IMU initialization
-        while(true) blinkCode(IMU_ERROR_CODE); // Block further code execution
-    }
-    
-    initFusion(); // Initialize the sensor fusion algorithms
-
-    if (!initGPS()) { // Initialize GPS and check if good
-        while(true) blinkCode(GPS_ERROR_CODE); // Block further code execution
-    }
-    
-    if (!initSDCard()) { // Initialize SD card filesystem and check if good
+    if (!diagFileLogger.begin(SD, SD_CS, LogLevel::DEBUG)) {
         while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
     }
 
@@ -76,8 +72,22 @@ void setup() {
     config.loadConfigurations(); // Load in configuration data from the file
     updateSettings();
 
+    if (!initGPS()) { // Initialize GPS and check if good
+        while(true) blinkCode(GPS_ERROR_CODE); // Block further code execution
+    }
+
     pollGPS();
     syncInternalClockGPS(); // Attempt to sync internal clock to GPS, if it has a fix already
+
+    if (!dataLogger.begin(SD, SD_CS)) { // Initialize SD card filesystem and check if good
+        while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
+    }
+
+    if (!initDSO32()) { // Check IMU initialization
+        while(true) blinkCode(IMU_ERROR_CODE); // Block further code execution
+    }
+    
+    initFusion(); // Initialize the sensor fusion algorithms
 
     #ifdef WIFI_AP_ENABLE
     if (!initWIFI_AP()) { // Start WIFI Access Point
@@ -114,7 +124,7 @@ void loop() {
         unsigned long _fusionStartTime = millis();
         updateFusion();
 
-        Serial.printf("Time to process sensor fusion: %d ms\r\n", millis() - _fusionStartTime); // DEBUG
+        diagLogger->verbose("Time to process sensor fusion: %d ms", millis() - _fusionStartTime);
         _lastIMUPoll = millis(); // Reset IMU poll timer
     }
 
@@ -122,29 +132,20 @@ void loop() {
     static unsigned long _lastLogTime = millis();
     if (isLogging && (millis() - _lastLogTime) >= logInterval) {
         unsigned long _logStartTime = micros();
-        if (!logData(SD)) {
-            // TODO: Figure out a better way to handle this type of error
-            while (true) blinkCode(FILE_ERROR_CODE); // Block further code execution
-        }
-        Serial.printf("Time to log data: %d us\r\n", micros() - _logStartTime); // DEBUG
-        _lastLogTime = millis(); // Reset log timer flag
+        dataLogger.writeTelemetryData();
+        diagLogger->verbose("Time to log data: %d us", micros() - _logStartTime);
+        _lastLogTime = millis();
     }
 
     // Logging handler
     static uint8_t _oldButtonPresses = 0;
     if (logButtonPresses != _oldButtonPresses && !digitalRead(LOG_EN) && millis() >= logButtonStartTime+LOG_BTN_HOLD_TIME) { // Check if BTN0 has been pressed and has been held for sufficient time
         isLogging = !isLogging;
-        if (!isLogFileCreated) {
-            if (!initDataLogFile(SD)) { // Initialize log file and check if good
-                while(true) blinkCode(FILE_ERROR_CODE); // block further code execution
-            }
-            isLogFileCreated = true;
-        }
         if (isLogging) {
-            _dataFile = SD.open(telemetryLogFilename, FILE_APPEND);
+            dataLogger.start(SD);
         }
         else {
-            _dataFile.close();
+            dataLogger.stop();
         }
         digitalWrite(LED_BUILTIN, isLogging);
         _oldButtonPresses = logButtonPresses;
@@ -152,6 +153,7 @@ void loop() {
 }
 
 void updateSettings() {
+    diagLogger->info("Updating settings...");
     // -----Sensor Configurations-----
     dso32.setAccelRange(getAccelRange(configData.accelRange));
     dso32.setGyroRange(getGyroRange(configData.gyroRange));
@@ -163,4 +165,17 @@ void updateSettings() {
     // -----Logging Configurations-----
     logFrequency = configData.loggingUpdateRate;
     logInterval = 1000/logFrequency;
+    isDebugging ? diagLogger->setLogLevel(configData.logPrintLevel) : diagLogger->setLogLevel(configData.logFileLevel);
+    diagLogger->info("done!");
+}
+
+
+// ==================================
+// === INTERRUPT SERVICE ROUTINES ===
+// ==================================
+
+
+void IRAM_ATTR logButtonISR() {
+    logButtonPresses++;
+    logButtonStartTime = millis();
 }

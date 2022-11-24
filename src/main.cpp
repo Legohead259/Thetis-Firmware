@@ -50,7 +50,7 @@ void setup() {
     diagLogger = isDebugging ? &diagPrintLogger : &diagFileLogger;
 
     Serial.println("-------------------------------------");
-    Serial.println("    Thetis Firmware Version 1.1.2    ");
+    Serial.println("    Thetis Firmware Version 1.1.3    ");
     Serial.println("-------------------------------------");
     Serial.println();
 
@@ -62,24 +62,6 @@ void setup() {
         while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
     }
 
-    if (!dataLogger.begin(SD, SD_CS)) { // Initialize SD card filesystem and check if good
-        while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
-    }
-
-    if (!initDSO32()) { // Check IMU initialization
-        while(true) blinkCode(IMU_ERROR_CODE); // Block further code execution
-    }
-    
-    initFusion(); // Initialize the sensor fusion algorithms
-
-    if (!initGPS()) { // Initialize GPS and check if good
-        while(true) blinkCode(GPS_ERROR_CODE); // Block further code execution
-    }
-    
-    // if (!initSDCard()) { // Initialize SD card filesystem and check if good
-    //     while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
-    // }
-
     if (!initSPIFFS()) { // Initialize SD card filesystem and check if good
         while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
     }
@@ -90,8 +72,22 @@ void setup() {
     config.loadConfigurations(); // Load in configuration data from the file
     updateSettings();
 
+    if (!initGPS()) { // Initialize GPS and check if good
+        while(true) blinkCode(GPS_ERROR_CODE); // Block further code execution
+    }
+
     pollGPS();
     syncInternalClockGPS(); // Attempt to sync internal clock to GPS, if it has a fix already
+
+    if (!dataLogger.begin(SD, SD_CS)) { // Initialize SD card filesystem and check if good
+        while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
+    }
+
+    if (!initDSO32()) { // Check IMU initialization
+        while(true) blinkCode(IMU_ERROR_CODE); // Block further code execution
+    }
+    
+    initFusion(); // Initialize the sensor fusion algorithms
 
     #ifdef WIFI_AP_ENABLE
     if (!initWIFI_AP()) { // Start WIFI Access Point
@@ -157,6 +153,7 @@ void loop() {
 }
 
 void updateSettings() {
+    diagLogger->info("Updating settings...");
     // -----Sensor Configurations-----
     dso32.setAccelRange(getAccelRange(configData.accelRange));
     dso32.setGyroRange(getGyroRange(configData.gyroRange));
@@ -168,6 +165,8 @@ void updateSettings() {
     // -----Logging Configurations-----
     logFrequency = configData.loggingUpdateRate;
     logInterval = 1000/logFrequency;
+    isDebugging ? diagLogger->setLogLevel(configData.logPrintLevel) : diagLogger->setLogLevel(configData.logFileLevel);
+    diagLogger->info("done!");
 }
 
 

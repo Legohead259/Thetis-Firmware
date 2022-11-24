@@ -18,13 +18,23 @@ Release sections
 ## [Unreleased] 1.2.0 -
 ### TODO
 
+## 1.1.3 - 2022-11-23
+### Added
+- Added support for the new logging features in ThetisLib
+
+---
+
 ## 1.1.2 - 2022-11-22
 ### Changed
 - Changed logging behavior for more performance. Can now log at a maximum of ~90 Hz
 
+---
+
 ## 1.1.1 - 2022-11-20
 ### Fixed
 - Fix [#20](https://github.com/Legohead259/Thetis-Firmware/issues/20)
+
+---
 
 ## 1.1.0 - 2022-11-20 
 

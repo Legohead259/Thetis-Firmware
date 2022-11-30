@@ -109,7 +109,7 @@ class ThetisData(Structure):
                 ('state', c_uint8)]
 
 # Read the data log file into memory
-with open('data/log_012.bin', 'rb') as file:
+with open('data/log_056_4_5Hz.bin', 'rb') as file:
     epoch_data = []
     raw_accel_data = []
     accel_data = []
@@ -124,14 +124,17 @@ with open('data/log_012.bin', 'rb') as file:
 
 # Generate theoretical sinusoidal data
 START_INDEX = 0
+# START_INDEX = 200
 TIME_WIDTH = len(epoch_data)
+# TIME_WIDTH = 200
 END_INDEX = START_INDEX + TIME_WIDTH
 
 t_epoch_data = np.linspace(0, 2, 1000)
 t_sine_data = [pow(OMEGA,2) * AMPLITUDE * np.sin(OMEGA * t_epoch_data[x]) for x in range(len(t_epoch_data))]
 # print(t_sine_data)
 
-x_meas = [epoch_data[START_INDEX + x].timestamp()-epoch_data[START_INDEX].timestamp() for x in range(TIME_WIDTH)]
+x_meas = [epoch_data[START_INDEX + x]-epoch_data[START_INDEX] for x in range(TIME_WIDTH)]
+x_meas = [x_meas[x].total_seconds() for x in range(TIME_WIDTH)]
 
 # Make plots
 fig_accel = plt.figure(1)
@@ -147,7 +150,7 @@ ax_accel.legend(["Raw", "Kalman Filtered"])
 fig_comp = plt.figure(2)
 ax_comp = fig_comp.add_subplot(1,1,1)
 ax_comp.set_title("Comparison of Measured and Theoretical Accelerations")
-ax_comp.plot(x_meas, accel_data[START_INDEX:END_INDEX])
+ax_comp.plot(x_meas, raw_accel_data[START_INDEX:END_INDEX], 'o-')
 ax_comp.plot(t_epoch_data, t_sine_data)
 ax_comp.set_xlabel("Time [s]")
 ax_comp.set_ylabel("Accelerations [m/s/s]")

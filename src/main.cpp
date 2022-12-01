@@ -1,9 +1,12 @@
 /**
- * @file Thetis Firmware
- * @version 1.1.1
- * 
+ * @file main.cpp
+ * @version 1.1.3
+ * @author Braidan Duffy (bduffy2018@my.fit.edu)
  * @brief 
+ * @date June 10, 2022
+ *       November 4, 2022 (last edit)
  * 
+ * CHANGELOG:
  * Version 0.1.0 - Initial baseline release
  * Version 0.2.0 - Added GPS integration
  * Version 0.2.1 - Integrated internal RTC for timestamps
@@ -15,10 +18,6 @@
  * Version 1.1.1 - Fixed issue where internal RTC was not syncing to GPS time on startup
  * Version 1.1.2 - Enabled faster logging rates up to ~90 Hz
  * Version 1.1.3 - Massive overhaul to logging system
- * 
- * @author Braidan Duffy
- * @date June 10, 2022
- *       November 4, 2022 (last edit)
 **/
 #include <ThetisLib.h>
 

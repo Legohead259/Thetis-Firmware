@@ -27,7 +27,7 @@ static const uint8_t SCL = 34;
 // SPI Bus
 static const uint8_t SS         = 21;
 static const uint8_t SD_CS      = 21;
-static const uint8_t XTSD_CS    = 14
+static const uint8_t XTSD_CS    = 14;
 static const uint8_t MOSI       = 35;
 static const uint8_t MISO       = 37;
 static const uint8_t SCK        = 36;

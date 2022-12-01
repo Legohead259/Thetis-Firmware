@@ -43,6 +43,6 @@ void initVariant(void) {
     pinMode(LED_BUILTIN, OUTPUT);
     
     // Start I2C bus
-    Wire.begin(SDA, SCL);
+    // Wire.begin(SDA, SCL);
 }
 }

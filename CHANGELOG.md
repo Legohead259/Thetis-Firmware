@@ -17,6 +17,13 @@ Release sections
 
 ## [Unreleased] 1.2.0 -
 ### TODO
+- Add support for FTP server
+- Add ability to switch between WiFi client and WiFi AP modes
+
+### Fixed
+- Fixed configuration parser error with log level parameters
+
+---
 
 ## 1.1.3 - 2022-11-23
 ### Added

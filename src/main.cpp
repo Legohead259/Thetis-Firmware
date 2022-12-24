@@ -18,6 +18,7 @@
  * Version 1.1.1 - Fixed issue where internal RTC was not syncing to GPS time on startup
  * Version 1.1.2 - Enabled faster logging rates up to ~90 Hz
  * Version 1.1.3 - Massive overhaul to logging system
+ * Version 1.2.0 - Added FTP server - began implementing WiFi functionality
 **/
 #include <ThetisLib.h>
 
@@ -49,7 +50,7 @@ void setup() {
     diagLogger = isDebugging ? &diagPrintLogger : &diagFileLogger;
 
     Serial.println("-------------------------------------");
-    Serial.println("    Thetis Firmware Version 1.1.3    ");
+    Serial.println("    Thetis Firmware Version 1.2.0    ");
     Serial.println("-------------------------------------");
     Serial.println();
 
@@ -88,17 +89,25 @@ void setup() {
     
     initFusion(); // Initialize the sensor fusion algorithms
 
-    #ifdef WIFI_AP_ENABLE
-    if (!initWIFI_AP()) { // Start WIFI Access Point
-        while (true) blinkCode(RADIO_ERROR_CODE); // Block code execution
-    } 
-    #endif
+    if (configData.wifiEnable && configData.wifiMode == WIFI_AP_MODE) { // Start WiFi in Access Point mode
+        if (!initWIFIAP()) while (true) blinkCode(RADIO_ERROR_CODE); // Block further code execution if the WiFi access point could not be started
+    }
+
+    if (configData.wifiEnable && configData.wifiMode == WIFI_CLIENT_MODE) { // Start WiFi in client mode
+        if (!initWIFIClient()) while (true) blinkCode(RADIO_ERROR_CODE); // Block further code execution if WiFi client could not be started. Note: This does not depend on a connection being made during startup
+    }
+
+    if (configData.wifiEnable && configData.ftpEnable) { // Start FTP server
+        ftpServer.begin("braidan", "duffy");
+    }
 
     // Attach the log enable button interrupt
     attachInterrupt(LOG_EN, logButtonISR, FALLING);
 }
 
 void loop() {
+    ftpServer.handleFTP();
+    /**
     // State and LED updates
     updateSystemState();
     updateSystemLED();
@@ -123,7 +132,7 @@ void loop() {
         unsigned long _fusionStartTime = millis();
         updateFusion();
 
-        diagLogger->verbose("Time to process sensor fusion: %d ms", millis() - _fusionStartTime);
+        diagLogger->trace("Time to process sensor fusion: %d ms", millis() - _fusionStartTime);
         _lastIMUPoll = millis(); // Reset IMU poll timer
     }
 
@@ -132,7 +141,7 @@ void loop() {
     if (isLogging && (millis() - _lastLogTime) >= logInterval) {
         unsigned long _logStartTime = micros();
         dataLogger.writeTelemetryData();
-        diagLogger->verbose("Time to log data: %d us", micros() - _logStartTime);
+        diagLogger->trace("Time to log data: %d us", micros() - _logStartTime);
         _lastLogTime = millis();
     }
 
@@ -149,6 +158,7 @@ void loop() {
         digitalWrite(LED_BUILTIN, isLogging);
         _oldButtonPresses = logButtonPresses;
     }
+    */
 }
 
 void updateSettings() {

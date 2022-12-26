@@ -15,8 +15,12 @@ Release sections
 ### Security 
 -->
 
-## [Unreleased] 1.2.0 -
-### TODO
+## [UNRELEASED] 
+
+---
+
+## 1.2.0 - 2022-12-25
+### Added
 - Add support for FTP server
 - Add ability to switch between WiFi client and WiFi AP modes
 

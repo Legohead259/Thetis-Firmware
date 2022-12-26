@@ -98,15 +98,19 @@ void setup() {
     }
 
     if (configData.wifiEnable && configData.ftpEnable) { // Start FTP server
-        ftpServer.begin("braidan", "duffy");
+        if (!initFTPServer()) while (true) blinkCode(RADIO_ERROR_CODE);
     }
 
     // Attach the log enable button interrupt
+    diagLogger->info("Attaching log enable interrupt...");
     attachInterrupt(LOG_EN, logButtonISR, FALLING);
+    diagLogger->info("done!");
 }
 
 void loop() {
-    ftpServer.handleFTP();
+    if (configData.wifiEnable && configData.ftpEnable && !isLogging) { // Only run the FTP server when the proper configs are set and the device is not logging (efficiency)
+        ftpServer.handleFTP();
+    }
     /**
     // State and LED updates
     updateSystemState();

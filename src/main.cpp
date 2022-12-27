@@ -19,6 +19,7 @@
  * Version 1.1.2 - Enabled faster logging rates up to ~90 Hz
  * Version 1.1.3 - Massive overhaul to logging system
  * Version 1.2.0 - Added FTP server - began implementing WiFi functionality
+ * Version 1.2.1 - Added asynchronous server for enable/disabling logging over HTTP GET requests
 **/
 #include <ThetisLib.h>
 
@@ -30,7 +31,6 @@ unsigned long logButtonStartTime;
 // Flags
 bool isDebugging = false;
 bool isIMUAvailable = false;
-bool isLogging = false;
 bool isLogFileCreated = false;
 bool isIMUCalibrated = true;
 
@@ -50,7 +50,7 @@ void setup() {
     diagLogger = isDebugging ? &diagPrintLogger : &diagFileLogger;
 
     Serial.println("-------------------------------------");
-    Serial.println("    Thetis Firmware Version 1.2.0    ");
+    Serial.println("    Thetis Firmware Version 1.2.1    ");
     Serial.println("-------------------------------------");
     Serial.println();
 
@@ -108,10 +108,10 @@ void setup() {
 }
 
 void loop() {
-    if (configData.wifiEnable && configData.ftpEnable && !isLogging) { // Only run the FTP server when the proper configs are set and the device is not logging (efficiency)
+    if (configData.wifiEnable && configData.ftpEnable) { // Only run the FTP server when the proper configs are set and the device is not logging (efficiency)
         ftpServer.handleFTP();
     }
-    /**
+    
     // State and LED updates
     updateSystemState();
     updateSystemLED();
@@ -162,7 +162,6 @@ void loop() {
         digitalWrite(LED_BUILTIN, isLogging);
         _oldButtonPresses = logButtonPresses;
     }
-    */
 }
 
 void updateSettings() {

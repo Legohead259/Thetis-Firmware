@@ -20,7 +20,10 @@
  * Version 1.1.3 - Massive overhaul to logging system
  * Version 1.2.0 - Added FTP server - began implementing WiFi functionality
  * Version 1.2.1 - Added asynchronous server for enable/disabling logging over HTTP GET requests
+ * Version 1.2.2 - Fixed NeoPixel functionality
 **/
+#define __FIRMWARE_VERSION__ "1.2.2"
+
 #include <ThetisLib.h>
 
 float logFrequency; // Hz 
@@ -50,9 +53,11 @@ void setup() {
     diagLogger = isDebugging ? &diagPrintLogger : &diagFileLogger;
 
     Serial.println("-------------------------------------");
-    Serial.println("    Thetis Firmware Version 1.2.1    ");
+    Serial.println("    Thetis Firmware Version 1.2.2    ");
     Serial.println("-------------------------------------");
     Serial.println();
+
+    setSystemState(BOOTING);
 
     if (!initNeoPixel()) { // Initialize the NeoPixel
         while(true); // Block further code execution
@@ -105,6 +110,8 @@ void setup() {
     diagLogger->info("Attaching log enable interrupt...");
     attachInterrupt(LOG_EN, logButtonISR, FALLING);
     diagLogger->info("done!");
+
+    setSystemState(STANDBY);
 }
 
 void loop() {

@@ -15,7 +15,15 @@ Release sections
 ### Security 
 -->
 
-## [UNRELEASED] 
+## [UNRELEASED] 1.2.2 - 2022-12-29
+### Fixed
+- Fixed NeoPixel functionality
+
+---
+
+## [UNRELEASED] 1.2.1 - 2022-12-27
+### Added
+- Added HTTP server to handle GET requests for log enable and disable
 
 ---
 

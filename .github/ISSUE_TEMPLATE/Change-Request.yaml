@@ -27,6 +27,8 @@ body:
       multiple: true
       options:
         - Rev F4
+        - Rev F5
+        - Rev G2
         - All
   - type: dropdown
     id: priority

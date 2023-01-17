@@ -57,8 +57,14 @@ void test_string_replace(void) {
 
 void setup()
 {
+    Serial.begin(115200);
+    while(!Serial); // Wait for serial connection
     delay(2000); // service delay
+    Serial.println("Hello World!");
+}
 
+void loop()
+{
     UNITY_BEGIN();
 
     RUN_TEST(test_string_concat);
@@ -69,8 +75,4 @@ void setup()
     RUN_TEST(test_string_replace);
 
     UNITY_END(); // stop unit testing
-}
-
-void loop()
-{
 }

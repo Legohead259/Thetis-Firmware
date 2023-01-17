@@ -21,6 +21,7 @@
  * Version 1.2.0 - Added FTP server - began implementing WiFi functionality
  * Version 1.2.1 - Added asynchronous server for enable/disabling logging over HTTP GET requests
  * Version 1.2.2 - Fixed NeoPixel functionality
+ * Version 1.2.3 - Added magnetometer functionality
 **/
 #define __FIRMWARE_VERSION__ "1.2.2"
 
@@ -45,7 +46,7 @@ void setup() {
     Wire.begin((int) SDA, (int) SCL);
 
     isDebugging = digitalRead(USB_DETECT); // Check if USB is plugged in
-    if (isDebugging && diagPrintLogger.begin(&Serial, LogLevel::VERBOSE)) {
+    if (isDebugging && diagPrintLogger.begin(&Serial, LogLevel::TRACE)) {
         Serial.begin(115200);
         while(!Serial); // Wait for serial connection
     }

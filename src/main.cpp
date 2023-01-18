@@ -23,7 +23,7 @@
  * Version 1.2.2 - Fixed NeoPixel functionality
  * Version 1.2.3 - Added magnetometer functionality
 **/
-#define __FIRMWARE_VERSION__ "1.2.2"
+#define __FIRMWARE_VERSION__ "1.2.4"
 
 #include <ThetisLib.h>
 
@@ -95,6 +95,7 @@ void setup() {
     
     initFusion(); // Initialize the sensor fusion algorithms
 
+    #ifdef WIFI_ENABLE
     if (configData.wifiEnable && configData.wifiMode == WIFI_AP_MODE) { // Start WiFi in Access Point mode
         if (!initWIFIAP()) while (true) blinkCode(RADIO_ERROR_CODE); // Block further code execution if the WiFi access point could not be started
     }
@@ -106,6 +107,7 @@ void setup() {
     if (configData.wifiEnable && configData.ftpEnable) { // Start FTP server
         if (!initFTPServer()) while (true) blinkCode(RADIO_ERROR_CODE);
     }
+    #endif
 
     // Attach the log enable button interrupt
     diagLogger->info("Attaching log enable interrupt...");
@@ -116,9 +118,11 @@ void setup() {
 }
 
 void loop() {
+    #ifdef WIFI_ENABLE
     if (configData.wifiEnable && configData.ftpEnable) { // Only run the FTP server when the proper configs are set and the device is not logging (efficiency)
         ftpServer.handleFTP();
     }
+    #endif
     
     // State and LED updates
     updateSystemState();

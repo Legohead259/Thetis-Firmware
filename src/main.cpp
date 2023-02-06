@@ -22,6 +22,7 @@
  * Version 1.2.1 - Added asynchronous server for enable/disabling logging over HTTP GET requests
  * Version 1.2.2 - Fixed NeoPixel functionality
  * Version 1.2.3 - Added magnetometer functionality
+ * Version 1.2.4 - Added battery gauge
 **/
 #define __FIRMWARE_VERSION__ "1.2.4"
 
@@ -54,7 +55,7 @@ void setup() {
     diagLogger = isDebugging ? &diagPrintLogger : &diagFileLogger;
 
     Serial.println("-------------------------------------");
-    Serial.println("    Thetis Firmware Version 1.2.2    ");
+    Serial.println("    Thetis Firmware Version 1.2.4    ");
     Serial.println("-------------------------------------");
     Serial.println();
 
@@ -94,6 +95,10 @@ void setup() {
     }
     
     initFusion(); // Initialize the sensor fusion algorithms
+
+    if (!initMAX17048()) {
+        while(true) blinkCode(GEN_ERROR_CODE); // Block further code execution
+    }
 
     #ifdef WIFI_ENABLE
     if (configData.wifiEnable && configData.wifiMode == WIFI_AP_MODE) { // Start WiFi in Access Point mode
@@ -147,7 +152,7 @@ void loop() {
     if ((millis() - _lastIMUPoll) >= fusionUpdateInterval) { // Check if IMU_POLL_INTERVAL time has passed
         unsigned long _fusionStartTime = millis();
         updateFusion();
-
+        updateVoltage();
         diagLogger->trace("Time to process sensor fusion: %d ms", millis() - _fusionStartTime);
         _lastIMUPoll = millis(); // Reset IMU poll timer
     }

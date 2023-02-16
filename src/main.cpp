@@ -193,6 +193,8 @@ void loop() {
         digitalWrite(LED_BUILTIN, isLogging);
         _oldButtonPresses = logButtonPresses;
     }
+
+    updateRTCms();
 }
 
 void updateSettings() {

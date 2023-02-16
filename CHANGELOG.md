@@ -15,6 +15,22 @@ Release sections
 ### Security 
 -->
 
+## [UNRELEASED] 1.2.4 - 2023-02-17
+### Added
+- Added integration of the MAX17048 battery monitoring IC
+
+### Changed
+- Changed how logging is handled - now it is run off a hardware timer interrupt that can be configured by the user through config.txt
+
+### Fixed
+- Reintroduced the RTC timestamp bug fix
+
+---
+
+## [UNRELEASED] 1.2.3 - 2023-02-03
+### Added
+- Added integration of the MVP for the LIS3MDL magnetometer
+
 ## [UNRELEASED] 1.2.2 - 2022-12-29
 ### Fixed
 - Fixed NeoPixel functionality

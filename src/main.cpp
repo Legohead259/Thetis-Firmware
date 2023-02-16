@@ -24,6 +24,7 @@
  * Version 1.2.3 - Added magnetometer functionality
  * Version 1.2.4 - Added battery gauge
  *               - Changed the way logging interval is handled; it is now user configurable
+ *               - Reintroduced RTC timestamp bug fix
 **/
 #define __FIRMWARE_VERSION__ "1.2.4"
 

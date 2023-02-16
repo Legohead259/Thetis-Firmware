@@ -23,6 +23,7 @@
  * Version 1.2.2 - Fixed NeoPixel functionality
  * Version 1.2.3 - Added magnetometer functionality
  * Version 1.2.4 - Added battery gauge
+ *               - Changed the way logging interval is handled; it is now user configurable
 **/
 #define __FIRMWARE_VERSION__ "1.2.4"
 
@@ -33,6 +34,7 @@ float logInterval;  // Time between log updates [ms]
 unsigned long logButtonPresses;
 unsigned long logButtonStartTime;
 
+
 // Flags
 bool isDebugging = false;
 bool isIMUAvailable = false;
@@ -41,6 +43,7 @@ bool isIMUCalibrated = true;
 
 void updateSettings();
 void IRAM_ATTR logButtonISR();
+void ARDUINO_ISR_ATTR onTimer();
 
 void setup() {
     // Casting to int is important as just uint8_t types will invoke the "slave" begin, not the master
@@ -71,6 +74,10 @@ void setup() {
 
     if (!initSPIFFS()) { // Initialize SD card filesystem and check if good
         while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
+    }
+
+    if (!initTimer()) { // Initialize Logging interval timer
+        while(true) blinkCode(GEN_ERROR_CODE); // Block further code execution
     }
 
     if (!config.begin("/config.cfg", 127)) { // Initialize config file and check if good
@@ -119,6 +126,11 @@ void setup() {
     attachInterrupt(LOG_EN, logButtonISR, FALLING);
     diagLogger->info("done!");
 
+    // Attach onTimer function to our timer.
+    diagLogger->info("Attaching logTimer interrupt...");
+    timerAttachInterrupt(timer, &onTimer, true);
+    diagLogger->info("done!");
+
     setSystemState(STANDBY);
 }
 
@@ -157,13 +169,14 @@ void loop() {
         _lastIMUPoll = millis(); // Reset IMU poll timer
     }
 
-    // Write data to log file
-    static unsigned long _lastLogTime = millis();
-    if (isLogging && (millis() - _lastLogTime) >= logInterval) {
+    if (isLogging && xSemaphoreTake(timerSemaphore, 0) == pdTRUE) {
+        // portENTER_CRITICAL(&timerMux);
+        // noInterrupts();
         unsigned long _logStartTime = micros();
         dataLogger.writeTelemetryData();
         diagLogger->trace("Time to log data: %d us", micros() - _logStartTime);
-        _lastLogTime = millis();
+        // interrupts();
+        // portEXIT_CRITICAL(&timerMux);
     }
 
     // Logging handler
@@ -172,6 +185,7 @@ void loop() {
         isLogging = !isLogging;
         if (isLogging) {
             dataLogger.start(SD);
+            timerAlarmEnable(timer); // Start the logging alarm
         }
         else {
             dataLogger.stop();
@@ -179,6 +193,8 @@ void loop() {
         digitalWrite(LED_BUILTIN, isLogging);
         _oldButtonPresses = logButtonPresses;
     }
+
+    updateRTCms();
 }
 
 void updateSettings() {
@@ -192,8 +208,7 @@ void updateSettings() {
     fusionUpdateInterval = 1000/configData.fusionUpdateRate;
 
     // -----Logging Configurations-----
-    logFrequency = configData.loggingUpdateRate;
-    logInterval = 1000/logFrequency;
+    timerAlarmWrite(timer, 1E6/configData.loggingUpdateRate, true);
     isDebugging ? diagLogger->setLogLevel(configData.logPrintLevel) : diagLogger->setLogLevel(configData.logFileLevel);
     diagLogger->info("done!");
 }
@@ -207,4 +222,9 @@ void updateSettings() {
 void IRAM_ATTR logButtonISR() {
     logButtonPresses++;
     logButtonStartTime = millis();
+}
+
+void ARDUINO_ISR_ATTR onTimer() {
+    // Give a semaphore that we can check in the loop
+    xSemaphoreGiveFromISR(timerSemaphore, NULL);
 }

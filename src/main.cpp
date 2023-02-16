@@ -104,9 +104,11 @@ void setup() {
     
     initFusion(); // Initialize the sensor fusion algorithms
 
+    #if defined(REV_F5) || defined(REV_G2)
     if (!initMAX17048()) {
         while(true) blinkCode(GEN_ERROR_CODE); // Block further code execution
     }
+    #endif // defined(REV_F5) || defined(REV_G2)
 
     #ifdef WIFI_ENABLE
     if (configData.wifiEnable && configData.wifiMode == WIFI_AP_MODE) { // Start WiFi in Access Point mode
@@ -165,7 +167,9 @@ void loop() {
     if ((millis() - _lastIMUPoll) >= fusionUpdateInterval) { // Check if IMU_POLL_INTERVAL time has passed
         unsigned long _fusionStartTime = millis();
         updateFusion();
+        #if defined(REV_F5) || defined(REV_G2)
         updateVoltage();
+        #endif // defined(REV_F5) || defined(REV_G2)
         diagLogger->trace("Time to process sensor fusion: %d ms", millis() - _fusionStartTime);
         _lastIMUPoll = millis(); // Reset IMU poll timer
     }

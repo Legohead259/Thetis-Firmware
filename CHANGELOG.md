@@ -18,6 +18,7 @@ Release sections
 ## [UNRELEASED] 1.2.4 - 2023-02-17
 ### Added
 - Added integration of the MAX17048 battery monitoring IC
+- Added compile flags for MAX17048 to prevent inclusion on earlier hardware revisions ([#42](https://github.com/Legohead259/ThetisLib/issues/42))
 
 ### Changed
 - Changed how logging is handled - now it is run off a hardware timer interrupt that can be configured by the user through config.txt

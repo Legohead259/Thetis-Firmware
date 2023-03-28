@@ -25,16 +25,17 @@
  * Version 1.2.4 - Added battery gauge
  *               - Changed the way logging interval is handled; it is now user configurable
  *               - Reintroduced RTC timestamp bug fix
+ * Version 1.2.5 - Fixed GPS polling issue
+ *               - Reverted log polling method
 **/
-#define __FIRMWARE_VERSION__ "1.2.4"
+#define __FIRMWARE_VERSION__ "1.2.5"
 
 #include <ThetisLib.h>
 
-float logFrequency; // Hz 
-float logInterval;  // Time between log updates [ms]
+unsigned long logFrequency; // Hz 
+unsigned long logInterval;  // Time between log updates [ms]
 unsigned long logButtonPresses;
 unsigned long logButtonStartTime;
-
 
 // Flags
 bool isDebugging = false;
@@ -50,6 +51,8 @@ void setup() {
     // Casting to int is important as just uint8_t types will invoke the "slave" begin, not the master
     Wire.begin((int) SDA, (int) SCL);
 
+    digitalWrite(GPS_RESET, HIGH);
+
     isDebugging = digitalRead(USB_DETECT); // Check if USB is plugged in
     if (isDebugging && diagPrintLogger.begin(&Serial, LogLevel::TRACE)) {
         Serial.begin(115200);
@@ -59,7 +62,7 @@ void setup() {
     diagLogger = isDebugging ? &diagPrintLogger : &diagFileLogger;
 
     Serial.println("-------------------------------------");
-    Serial.println("    Thetis Firmware Version 1.2.4    ");
+    Serial.println("    Thetis Firmware Version 1.2.5    ");
     Serial.println("-------------------------------------");
     Serial.println();
 
@@ -69,9 +72,9 @@ void setup() {
         while(true); // Block further code execution
     }
 
-    // if (!diagFileLogger.begin(SD, XTSD_CS, LogLevel::DEBUG)) {
-    //     while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
-    // }
+    if (!diagFileLogger.begin(SD, SD_CS, LogLevel::DEBUG)) {
+        while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
+    }
 
     if (!initSPIFFS()) { // Initialize SD card filesystem and check if good
         while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
@@ -94,7 +97,7 @@ void setup() {
     pollGPS();
     syncInternalClockGPS(); // Attempt to sync internal clock to GPS, if it has a fix already
 
-    if (!dataLogger.begin(SD, XTSD_CS)) { // Initialize SD card filesystem and check if good
+    if (!dataLogger.begin(SD, SD_CS)) { // Initialize SD card filesystem and check if good
         while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
     }
 
@@ -163,9 +166,9 @@ void loop() {
     }
 
     // Update sensor fusion algorithm and data structure
-    static unsigned long _lastIMUPoll = millis();
-    if ((millis() - _lastIMUPoll) >= fusionUpdateInterval) { // Check if IMU_POLL_INTERVAL time has passed
-        unsigned long _fusionStartTime = millis();
+    static unsigned long _lastIMUPoll = micros();
+    if ((micros() - _lastIMUPoll) >= fusionUpdateInterval) { // Check if IMU_POLL_INTERVAL time has passed
+        unsigned long _fusionStartTime = micros();
         updateFusion();
         #if defined(REV_F5) || defined(REV_G2)
         updateVoltage();
@@ -174,23 +177,22 @@ void loop() {
         _lastIMUPoll = millis(); // Reset IMU poll timer
     }
 
-    if (isLogging && xSemaphoreTake(timerSemaphore, 0) == pdTRUE) {
-        // portENTER_CRITICAL(&timerMux);
-        // noInterrupts();
+    // Update the log with the most recent sample
+    static unsigned long _lastLogTime = micros();
+    if (isLogging && (micros() - _lastLogTime) >= logInterval) { // Check if the log interval has passed
         unsigned long _logStartTime = micros();
-        dataLogger.writeTelemetryData();
+        dataLogger.writeTelemetryData();  
         diagLogger->trace("Time to log data: %d us", micros() - _logStartTime);
-        // interrupts();
-        // portEXIT_CRITICAL(&timerMux);
+        _lastLogTime = micros();
     }
 
-    // Logging handler
+    // Log Enabling handler
     static uint8_t _oldButtonPresses = 0;
     if (logButtonPresses != _oldButtonPresses && !digitalRead(LOG_EN) && millis() >= logButtonStartTime+LOG_BTN_HOLD_TIME) { // Check if BTN0 has been pressed and has been held for sufficient time
         isLogging = !isLogging;
         if (isLogging) {
             dataLogger.start(SD);
-            timerAlarmEnable(timer); // Start the logging alarm
+            // timerAlarmEnable(timer); // Start the logging alarm
         }
         else {
             dataLogger.stop();
@@ -213,7 +215,10 @@ void updateSettings() {
     fusionUpdateInterval = 1000/configData.fusionUpdateRate;
 
     // -----Logging Configurations-----
-    timerAlarmWrite(timer, 1E6/configData.loggingUpdateRate, true);
+    // timerAlarmWrite(timer, 1E6/configData.loggingUpdateRate, true);
+    logFrequency = configData.loggingUpdateRate;
+    logInterval = 1E6/logFrequency; // us
+    // diagLogger->verbose("Set log interval to: %f seconds")
     isDebugging ? diagLogger->setLogLevel(configData.logPrintLevel) : diagLogger->setLogLevel(configData.logFileLevel);
     diagLogger->info("done!");
 }
@@ -229,7 +234,7 @@ void IRAM_ATTR logButtonISR() {
     logButtonStartTime = millis();
 }
 
-void ARDUINO_ISR_ATTR onTimer() {
+void IRAM_ATTR onTimer() {
     // Give a semaphore that we can check in the loop
     xSemaphoreGiveFromISR(timerSemaphore, NULL);
 }

@@ -82,7 +82,7 @@ static const uint8_t NEOPIXEL_DATA  = 3; // Output, data for the NeoPixel
 static const uint8_t LOG_EN         = 8; // Input, enables/disables logging; Active LOW
 static const uint8_t NEOPIXEL_EN    = 9; // Output, enable the NeoPixel power; Active LOW
 static const uint8_t USB_DETECT     = 12; // Input, detects USB presence
-static const uint8_t SD_CARD_DETECT = 14; // Input, detects SD card presence
+static const uint8_t SD_CARD_DETECT = 13; // Input, detects SD card presence
 static const uint8_t BATTERY_ALERT  = 38; // Input, alarm triggered by battery monitoring IC when battery is critical; Active LOW
 static const uint8_t LED_BUILTIN    = 42; // Output, onboard activity LED
 

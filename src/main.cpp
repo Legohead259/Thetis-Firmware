@@ -72,8 +72,11 @@ void setup() {
         while(true); // Block further code execution
     }
 
-    if (!diagFileLogger.begin(SD, SD_CS, LogLevel::DEBUG)) {
-        while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
+    if (!digitalRead(SD_CARD_DETECT) || !diagFileLogger.begin(SD, SD_CS, LogLevel::DEBUG)) {
+        blinkCode((ErrorCode_t) B1010, AMBER); // Flash a warning that SD card not detected or failed to start
+        if (!diagFileLogger.begin(SD, XTSD_CS, LogLevel::DEBUG)) { // Switch to logging on XTSD card
+            while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
+        }
     }
 
     if (!initSPIFFS()) { // Initialize SD card filesystem and check if good
@@ -97,9 +100,16 @@ void setup() {
     pollGPS();
     syncInternalClockGPS(); // Attempt to sync internal clock to GPS, if it has a fix already
 
-    if (!dataLogger.begin(SD, SD_CS)) { // Initialize SD card filesystem and check if good
-        while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
+    if (!digitalRead(SD_CARD_DETECT) || !dataLogger.begin(SD, SD_CS)) { // Initialize SD card filesystem and check if good
+        diagLogger->warn("uSD Card not detected or not working, attempting backup with XTSD card");
+        blinkCode((ErrorCode_t) B1010, AMBER); // Warn that there was an issue with the SD card
+        if (!dataLogger.begin(SD, XTSD_CS)) { // Try to initialize backup writing to the XTSD card
+            while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
+        }
     }
+    // if (!dataLogger.begin(SD, XTSD_CS)) { // Initialize SD card filesystem and check if good
+    //     while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
+    // }
 
     if (!initDSO32()) { // Check IMU initialization
         while(true) blinkCode(IMU_ERROR_CODE); // Block further code execution

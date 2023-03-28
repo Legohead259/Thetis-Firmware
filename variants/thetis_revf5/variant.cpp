@@ -41,6 +41,9 @@ void initVariant(void) {
     pinMode(SD_CARD_DETECT, INPUT);
     pinMode(BATTERY_ALERT, INPUT);
     pinMode(LED_BUILTIN, OUTPUT);
+
+    // Set GPS reset pin to high initially
+    digitalWrite(GPS_RESET, HIGH);
     
     // Start I2C bus
     // Wire.begin(SDA, SCL);

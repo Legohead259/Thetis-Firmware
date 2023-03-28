@@ -69,9 +69,9 @@ void setup() {
         while(true); // Block further code execution
     }
 
-    if (!diagFileLogger.begin(SD, SD_CS, LogLevel::DEBUG)) {
-        while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
-    }
+    // if (!diagFileLogger.begin(SD, XTSD_CS, LogLevel::DEBUG)) {
+    //     while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
+    // }
 
     if (!initSPIFFS()) { // Initialize SD card filesystem and check if good
         while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
@@ -94,7 +94,7 @@ void setup() {
     pollGPS();
     syncInternalClockGPS(); // Attempt to sync internal clock to GPS, if it has a fix already
 
-    if (!dataLogger.begin(SD, SD_CS)) { // Initialize SD card filesystem and check if good
+    if (!dataLogger.begin(SD, XTSD_CS)) { // Initialize SD card filesystem and check if good
         while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
     }
 

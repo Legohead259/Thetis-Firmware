@@ -11,7 +11,7 @@
 #define digitalPinToInterrupt(p)    (((p)<48)?(p):-1)
 #define digitalPinHasPWM(p)         (p < 46)
 
-#define GPS_SERIAL_PORT Serial1
+#define GPS_SERIAL_PORT Serial0
 #define DEBUG_SERIAL_PORT Serial
 
 // UART

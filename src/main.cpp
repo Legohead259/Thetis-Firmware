@@ -72,12 +72,12 @@ void setup() {
         while(true); // Block further code execution
     }
 
-    if (!digitalRead(SD_CARD_DETECT) || !diagFileLogger.begin(SD, SD_CS, LogLevel::DEBUG)) {
-        blinkCode((ErrorCode_t) B1010, AMBER); // Flash a warning that SD card not detected or failed to start
-        if (!diagFileLogger.begin(SD, XTSD_CS, LogLevel::DEBUG)) { // Switch to logging on XTSD card
-            while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
-        }
-    }
+    // if (!digitalRead(SD_CARD_DETECT) || !diagFileLogger.begin(SD, SD_CS, LogLevel::DEBUG)) {
+    //     blinkCode((ErrorCode_t) B1010, AMBER); // Flash a warning that SD card not detected or failed to start
+    //     if (!diagFileLogger.begin(SD, XTSD_CS, LogLevel::DEBUG)) { // Switch to logging on XTSD card
+    //         while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
+    //     }
+    // }
 
     if (!initSPIFFS()) { // Initialize SD card filesystem and check if good
         while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
@@ -151,6 +151,11 @@ void setup() {
 }
 
 void loop() {
+    // Debug statements
+    diagLogger->debug("SD CS State: %s", digitalRead(SD_CS) ? "HIGH" : "LOW");
+    diagLogger->debug("XTSD CS State: %s", digitalRead(XTSD_CS) ? "HIGH" : "LOW");
+
+    // WiFi handling
     #ifdef WIFI_ENABLE
     if (configData.wifiEnable && configData.ftpEnable) { // Only run the FTP server when the proper configs are set and the device is not logging (efficiency)
         ftpServer.handleFTP();
@@ -191,7 +196,7 @@ void loop() {
     static unsigned long _lastLogTime = micros();
     if (isLogging && (micros() - _lastLogTime) >= logInterval) { // Check if the log interval has passed
         unsigned long _logStartTime = micros();
-        dataLogger.writeTelemetryData();  
+        dataLogger.writeTelemetryData();
         diagLogger->trace("Time to log data: %d us", micros() - _logStartTime);
         _lastLogTime = micros();
     }
@@ -202,7 +207,7 @@ void loop() {
         isLogging = !isLogging;
         if (isLogging) {
             dataLogger.start(SD);
-            // timerAlarmEnable(timer); // Start the logging alarm
+            digitalWrite(SD_CS, LOW);
         }
         else {
             dataLogger.stop();

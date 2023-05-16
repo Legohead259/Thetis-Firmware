@@ -23,9 +23,9 @@ const FusionVector gyroscopeSensitivity = {1.0f, 1.0f, 1.0f};
 const FusionVector gyroscopeOffset = {-0.197f, -0.2145f, -0.7615f};
 const FusionMatrix accelerometerMisalignment = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
 const FusionVector accelerometerSensitivity = {1.0f, 1.0f, 1.0f};
-const FusionVector accelerometerOffset = {0.0f, 0.0f, 0.0f};
-const FusionMatrix softIronMatrix = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
-const FusionVector hardIronOffset = {0.0f, 0.0f, 0.0f};
+const FusionVector accelerometerOffset = {-0.107126f, -0.169197f, 0.203518f};
+const FusionMatrix softIronMatrix = {1.007953f, 0.028542f, 0.021886f, 0.028542f, 0.997232f, -0.023602f, 0.021886f, -0.023602f, 0.983273f};
+const FusionVector hardIronOffset = {-20.178613f, 184.923591f, 281.544349f};
 
 FusionOffset offset;
 FusionAhrs ahrs;

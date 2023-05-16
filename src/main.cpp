@@ -74,13 +74,11 @@ void loop() {
     if (isLogging && (micros() - _lastLogTime) >= logInterval) { // Check if the log interval has passed
         unsigned long _logStartTime = micros();
         char buffer[64];
-        #ifdef MAG_CAL {
+        #ifdef MAG_CAL
         sprintf(buffer, "%0.3f\t%0.3f\t%0.3f\n", data.magX, data.magY, data.magZ);
-        }
         #endif
-        #ifdef ACCEL_CAL {
+        #ifdef ACCEL_CAL
         sprintf(buffer, "%0.3f\t%0.3f\t%0.3f\n", data.accelX, data.accelY, data.accelZ);
-        }
         #endif
         dataLogger.print(buffer);
         diagLogger->trace("Time to log data: %d us", micros() - _logStartTime);

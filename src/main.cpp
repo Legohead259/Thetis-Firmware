@@ -57,6 +57,11 @@ void setup() {
         while(true);
     }
 
+    if (!api.begin(&Serial)) {
+        Serial.println("Failed to start API");
+        while(true);
+    }
+
     // Initialise algorithms
     FusionOffsetInitialise(&offset, SAMPLE_RATE);
     FusionAhrsInitialise(&ahrs);
@@ -70,6 +75,8 @@ void setup() {
             .rejectionTimeout = 5 * SAMPLE_RATE, /* 5 seconds */
     };
     FusionAhrsSetSettings(&ahrs, &settings);
+
+    api.sendNotification("Arduino Connected");
 }
 
 void loop() {
@@ -104,7 +111,32 @@ void loop() {
     // printf("Roll %0.1f, Pitch %0.1f, Yaw %0.1f, X %0.1f, Y %0.1f, Z %0.1f\n",
     //         euler.angle.roll, euler.angle.pitch, euler.angle.yaw,
     //         earth.axis.x, earth.axis.y, earth.axis.z);
-    Serial.printf("Orientation: %0.3f, %0.3f, %0.3f\n", euler.angle.yaw, euler.angle.pitch, euler.angle.roll);
+    // Serial.printf("Orientation: %0.3f, %0.3f, %0.3f\n", euler.angle.yaw, euler.angle.pitch, euler.angle.roll);
+
+
+    // xioAPI_Protocol::EulerMessage msg{};
+    // msg.timestamp = micros();
+    // msg.roll = euler.angle.roll;
+    // msg.pitch = euler.angle.pitch;
+    // msg.yaw = euler.angle.yaw;
+    // api.sendEulerAngles(msg);
+
+    // xioAPI_Protocol::InertialMessage msg{};
+    // msg.timestamp = micros();
+    // msg.gx = gyroscope.axis.x;
+    // msg.gy = gyroscope.axis.y;
+    // msg.gz = gyroscope.axis.z;
+    // msg.ax = accelerometer.axis.x;
+    // msg.ay = accelerometer.axis.y;
+    // msg.az = accelerometer.axis.z;
+    // api.sendInertial(msg);
+    
+    if (api.checkForCommand()) {
+        char *cmdPtr = api.getCommand();
+        char *valPtr = api.getValue();
+        
+        api.handleCommand(cmdPtr);
+    }
 
     // Serial.printf("Orientation: %f, %f, %f\n", 360-getYaw(), getPitch(), getRoll());
     // Serial.printf("Quaternion: %f, %f, %f, %f\n", data.quatW, data.quatX, data.quatY, data.quatZ);

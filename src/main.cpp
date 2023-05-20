@@ -47,6 +47,16 @@ void setup() {
     Serial.println("---------------------------------");
     Serial.println();
 
+    if (!SPIFFS.begin()) {
+        Serial.println("Failed to start SPIFFS");
+        while(true);
+    }
+
+    if (!loadConfigurations()) { // Check configuration parameters
+        Serial.println("Failed to load configs");
+        while(true); // Block further code execution
+    }
+
     if (!initDSO32()) { // Check IMU initialization
         Serial.println("Failed DSO32");
         while(true); // Block further code execution

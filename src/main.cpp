@@ -52,7 +52,7 @@ void setup() {
         while(true);
     }
 
-    if (!loadConfigurations()) { // Check configuration parameters
+    if (!loadConfigurationsFromJSON()) { // Check configuration parameters
         Serial.println("Failed to load configs");
         while(true); // Block further code execution
     }
@@ -87,6 +87,8 @@ void setup() {
     FusionAhrsSetSettings(&ahrs, &settings);
 
     api.sendNotification("Arduino Connected");
+
+    Serial.println(deviceSettings.deviceName);
 }
 
 void loop() {
@@ -141,11 +143,10 @@ void loop() {
     // msg.az = accelerometer.axis.z;
     // api.sendInertial(msg);
     
-    if (api.checkForCommand()) {
-        char *cmdPtr = api.getCommand();
-        char *valPtr = api.getValue();
-        
-        api.handleCommand(cmdPtr);
+    unsigned long _start = micros();
+    if (api.checkForCommand()) {      
+        api.handleCommand(api.getCommand());
+        Serial.printf("Time to process command: %f ms\r\n", (micros() - _start) / 1000.0f); // DEBUG
     }
 
     // Serial.printf("Orientation: %f, %f, %f\n", 360-getYaw(), getPitch(), getRoll());

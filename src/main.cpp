@@ -1,10 +1,10 @@
 /**
  * @file main.cpp
- * @version 1.1.3
+ * @version 1.3.0
  * @author Braidan Duffy (bduffy2018@my.fit.edu)
  * @brief 
  * @date June 10, 2022
- *       November 4, 2022 (last edit)
+ *       June 16, 2023 (last edit)
  * 
  * CHANGELOG:
  * Version 0.1.0 - Initial baseline release
@@ -27,8 +27,11 @@
  *               - Reintroduced RTC timestamp bug fix
  * Version 1.2.5 - Fixed GPS polling issue
  *               - Reverted log polling method
+ * Version 1.3.0 - Integrated TimerEvents rework
+ *               - Integrated xioAPI (ThetisAPI)
+ *               - Integrated Fusion rework
 **/
-#define __FIRMWARE_VERSION__ "1.2.5"
+#define __FIRMWARE_VERSION__ "1.3.0"
 
 #include <ThetisLib.h>
 
@@ -51,10 +54,8 @@ void setup() {
     // Casting to int is important as just uint8_t types will invoke the "slave" begin, not the master
     Wire.begin((int) SDA, (int) SCL);
 
-    digitalWrite(GPS_RESET, HIGH);
-
     isDebugging = digitalRead(USB_DETECT); // Check if USB is plugged in
-    if (isDebugging && diagPrintLogger.begin(&Serial, LogLevel::TRACE)) {
+    if (isDebugging && diagPrintLogger.begin(&Serial, LogLevel::DEBUG)) {
         Serial.begin(115200);
         while(!Serial); // Wait for serial connection
     }
@@ -62,7 +63,7 @@ void setup() {
     diagLogger = isDebugging ? &diagPrintLogger : &diagFileLogger;
 
     Serial.println("-------------------------------------");
-    Serial.println("    Thetis Firmware Version 1.2.5    ");
+    Serial.println("    Thetis Firmware Version 1.3.0    ");
     Serial.println("-------------------------------------");
     Serial.println();
 
@@ -72,26 +73,22 @@ void setup() {
         while(true); // Block further code execution
     }
 
-    // if (!digitalRead(SD_CARD_DETECT) || !diagFileLogger.begin(SD, SD_CS, LogLevel::DEBUG)) {
-    //     blinkCode((ErrorCode_t) B1010, AMBER); // Flash a warning that SD card not detected or failed to start
-    //     if (!diagFileLogger.begin(SD, XTSD_CS, LogLevel::DEBUG)) { // Switch to logging on XTSD card
-    //         while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
-    //     }
-    // }
+    if (!digitalRead(SD_CARD_DETECT) || !diagFileLogger.begin(SD, SD_CS, LogLevel::DEBUG)) {
+        while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
+    }
 
     if (!initSPIFFS()) { // Initialize SD card filesystem and check if good
         while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
     }
 
-    if (!initTimer()) { // Initialize Logging interval timer
+    if (!api.begin(&Serial)) {
         while(true) blinkCode(GEN_ERROR_CODE); // Block further code execution
     }
 
-    if (!config.begin("/config.cfg", 127)) { // Initialize config file and check if good
-        while (true) blinkCode(FILE_ERROR_CODE); // Block code execution
+    thetisSettingsInitialize();
+    if (!loadConfigurationsFromJSON(true, "/config.json")) {
+        while(true) blinkCode(FILE_ERROR_CODE);
     }
-    config.loadConfigurations(); // Load in configuration data from the file
-    updateSettings();
 
     if (!initGPS()) { // Initialize GPS and check if good
         while(true) blinkCode(GPS_ERROR_CODE); // Block further code execution
@@ -100,23 +97,20 @@ void setup() {
     pollGPS();
     syncInternalClockGPS(); // Attempt to sync internal clock to GPS, if it has a fix already
 
-    if (!digitalRead(SD_CARD_DETECT) || !dataLogger.begin(SD, SD_CS)) { // Initialize SD card filesystem and check if good
-        diagLogger->warn("uSD Card not detected or not working, attempting backup with XTSD card");
-        blinkCode((ErrorCode_t) B1010, AMBER); // Warn that there was an issue with the SD card
-        if (!dataLogger.begin(SD, XTSD_CS)) { // Try to initialize backup writing to the XTSD card
-            while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
-        }
+    if (!dataLogger.begin(SD, SD_CS)) { // Initialize SD card filesystem and check if good
+        while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
     }
-    // if (!dataLogger.begin(SD, XTSD_CS)) { // Initialize SD card filesystem and check if good
-    //     while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
-    // }
 
     if (!initDSO32()) { // Check IMU initialization
         while(true) blinkCode(IMU_ERROR_CODE); // Block further code execution
     }
-    
-    initFusion(); // Initialize the sensor fusion algorithms
 
+    #ifdef MAG_ENABLE
+    if (!initLIS3MDL()) { // Check magnetometer initialization
+        while(true) blinkCode(IMU_ERROR_CODE);
+    }
+    #endif // MAG_ENABLE
+    
     #if defined(REV_F5) || defined(REV_G2)
     if (!initMAX17048()) {
         while(true) blinkCode(GEN_ERROR_CODE); // Block further code execution
@@ -124,15 +118,15 @@ void setup() {
     #endif // defined(REV_F5) || defined(REV_G2)
 
     #ifdef WIFI_ENABLE
-    if (configData.wifiEnable && configData.wifiMode == WIFI_AP_MODE) { // Start WiFi in Access Point mode
-        if (!initWIFIAP()) while (true) blinkCode(RADIO_ERROR_CODE); // Block further code execution if the WiFi access point could not be started
+    if (getSetting<uint8_t>("wirelessMode") == WIRELESS_AP) { // Start WiFi in Access Point mode
+        if (!initWIFIAP()) while (true) blinkCode(RADIO_ERROR_CODE); // Block further code execution
     }
 
-    if (configData.wifiEnable && configData.wifiMode == WIFI_CLIENT_MODE) { // Start WiFi in client mode
-        if (!initWIFIClient()) while (true) blinkCode(RADIO_ERROR_CODE); // Block further code execution if WiFi client could not be started. Note: This does not depend on a connection being made during startup
+    if (getSetting<uint8_t>("wirelessMode") == WIRELESS_CLIENT) { // Start WiFi in client mode
+        if (!initWIFIClient()) while (true) blinkCode(RADIO_ERROR_CODE); // Block further code execution
     }
 
-    if (configData.wifiEnable && configData.ftpEnable) { // Start FTP server
+    if (getSetting<uint8_t>("wirelessMode") && getSetting<bool>("ftpEnabled")) { // Start FTP server
         if (!initFTPServer()) while (true) blinkCode(RADIO_ERROR_CODE);
     }
     #endif
@@ -142,22 +136,33 @@ void setup() {
     attachInterrupt(LOG_EN, logButtonISR, FALLING);
     diagLogger->info("done!");
 
-    // Attach onTimer function to our timer.
-    diagLogger->info("Attaching logTimer interrupt...");
-    timerAttachInterrupt(timer, &onTimer, true);
-    diagLogger->info("done!");
+    TimerEvents.add(GPS_POLL_INTERVAL, pollGPS);
+    TimerEvents.add(GPS_SYNC_INTERVAL*60000, syncInternalClockGPS);
+    TimerEvents.add(20, []() { 
+        unsigned long _fusionStartTime = micros();
+        pollDSO32();
+        pollLIS3MDL();
+        #if defined(REV_F5) || defined(REV_G2)
+        updateVoltage();
+        #endif // defined(REV_F5) || defined(REV_G2)
+        diagLogger->trace("Time to process sensor fusion: %d ms", millis() - _fusionStartTime);
+    } );
+    TimerEvents.add(logInterval, []() { 
+        unsigned long _logStartTime = micros();
+        dataLogger.writeTelemetryData();
+        diagLogger->trace("Time to log data: %d us", micros() - _logStartTime);
+    } );
 
     setSystemState(STANDBY);
 }
 
 void loop() {
-    // Debug statements
-    diagLogger->debug("SD CS State: %s", digitalRead(SD_CS) ? "HIGH" : "LOW");
-    diagLogger->debug("XTSD CS State: %s", digitalRead(XTSD_CS) ? "HIGH" : "LOW");
+    TimerEvents.tasks();
+    api.checkForCommand();
 
     // WiFi handling
     #ifdef WIFI_ENABLE
-    if (configData.wifiEnable && configData.ftpEnable) { // Only run the FTP server when the proper configs are set and the device is not logging (efficiency)
+    if (getSetting<uint8_t>("wirelessMode") && getSetting<bool>("ftpEnabled")) { // Only run the FTP server when the proper configs are set and the device is not logging (efficiency)
         ftpServer.handleFTP();
     }
     #endif
@@ -165,41 +170,6 @@ void loop() {
     // State and LED updates
     updateSystemState();
     updateSystemLED();
-
-    // Poll GPS and update data structure
-    static unsigned long _lastGPSPoll = millis();
-    if ((millis() - _lastGPSPoll) >= GPS_POLL_INTERVAL) { // Check if GPS_POLL_INTERVAL has passed
-        pollGPS();
-        _lastGPSPoll = millis(); // Reset GPS poll timer
-    }
-
-    // Timestamp synchronization
-    static unsigned long _lastGPSSync = millis();
-    if ((millis() - _lastGPSSync) >= GPS_SYNC_INTERVAL*60000) { // Check if GPS_SYNC_INTERVAL has passed
-        syncInternalClockGPS();
-        _lastGPSSync = millis(); // Reset GPS sync timer
-    }
-
-    // Update sensor fusion algorithm and data structure
-    static unsigned long _lastIMUPoll = micros();
-    if ((micros() - _lastIMUPoll) >= fusionUpdateInterval) { // Check if IMU_POLL_INTERVAL time has passed
-        unsigned long _fusionStartTime = micros();
-        updateFusion();
-        #if defined(REV_F5) || defined(REV_G2)
-        updateVoltage();
-        #endif // defined(REV_F5) || defined(REV_G2)
-        diagLogger->trace("Time to process sensor fusion: %d ms", millis() - _fusionStartTime);
-        _lastIMUPoll = millis(); // Reset IMU poll timer
-    }
-
-    // Update the log with the most recent sample
-    static unsigned long _lastLogTime = micros();
-    if (isLogging && (micros() - _lastLogTime) >= logInterval) { // Check if the log interval has passed
-        unsigned long _logStartTime = micros();
-        dataLogger.writeTelemetryData();
-        diagLogger->trace("Time to log data: %d us", micros() - _logStartTime);
-        _lastLogTime = micros();
-    }
 
     // Log Enabling handler
     static uint8_t _oldButtonPresses = 0;
@@ -219,25 +189,6 @@ void loop() {
     updateRTCms();
 }
 
-void updateSettings() {
-    diagLogger->info("Updating settings...");
-    // -----Sensor Configurations-----
-    dso32.setAccelRange(getAccelRange(configData.accelRange));
-    dso32.setGyroRange(getGyroRange(configData.gyroRange));
-    dso32.setAccelDataRate(getDataRate(configData.imuDataRate));
-    dso32.setGyroDataRate(getDataRate(configData.imuDataRate));
-    // TODO: Add magnetometer (LIS3MDL)
-    fusionUpdateInterval = 1000/configData.fusionUpdateRate;
-
-    // -----Logging Configurations-----
-    // timerAlarmWrite(timer, 1E6/configData.loggingUpdateRate, true);
-    logFrequency = configData.loggingUpdateRate;
-    logInterval = 1E6/logFrequency; // us
-    // diagLogger->verbose("Set log interval to: %f seconds")
-    isDebugging ? diagLogger->setLogLevel(configData.logPrintLevel) : diagLogger->setLogLevel(configData.logFileLevel);
-    diagLogger->info("done!");
-}
-
 
 // ==================================
 // === INTERRUPT SERVICE ROUTINES ===
@@ -247,9 +198,4 @@ void updateSettings() {
 void IRAM_ATTR logButtonISR() {
     logButtonPresses++;
     logButtonStartTime = millis();
-}
-
-void IRAM_ATTR onTimer() {
-    // Give a semaphore that we can check in the loop
-    xSemaphoreGiveFromISR(timerSemaphore, NULL);
 }

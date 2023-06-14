@@ -73,12 +73,9 @@ void setup() {
         while(true); // Block further code execution
     }
 
-    // if (!digitalRead(SD_CARD_DETECT) || !diagFileLogger.begin(SD, SD_CS, LogLevel::DEBUG)) {
-    //     blinkCode((ErrorCode_t) B1010, AMBER); // Flash a warning that SD card not detected or failed to start
-    //     if (!diagFileLogger.begin(SD, XTSD_CS, LogLevel::DEBUG)) { // Switch to logging on XTSD card
-    //         while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
-    //     }
-    // }
+    if (!digitalRead(SD_CARD_DETECT) || !diagFileLogger.begin(SD, SD_CS, LogLevel::DEBUG)) {
+        while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
+    }
 
     if (!initSPIFFS()) { // Initialize SD card filesystem and check if good
         while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
@@ -88,10 +85,10 @@ void setup() {
         while(true) blinkCode(GEN_ERROR_CODE); // Block further code execution
     }
 
+    thetisSettingsInitialize();
     if (!loadConfigurationsFromJSON(true, "/config.json")) {
         while(true) blinkCode(FILE_ERROR_CODE);
     }
-    thetisSettingsInitialize();
 
     if (!initGPS()) { // Initialize GPS and check if good
         while(true) blinkCode(GPS_ERROR_CODE); // Block further code execution
@@ -121,15 +118,15 @@ void setup() {
     #endif // defined(REV_F5) || defined(REV_G2)
 
     #ifdef WIFI_ENABLE
-    if (settings.wirelessMode == WIRELESS_AP) { // Start WiFi in Access Point mode
+    if (getSetting<uint8_t>("wirelessMode") == WIRELESS_AP) { // Start WiFi in Access Point mode
         if (!initWIFIAP()) while (true) blinkCode(RADIO_ERROR_CODE); // Block further code execution
     }
 
-    if (settings.wirelessMode == WIRELESS_CLIENT) { // Start WiFi in client mode
+    if (getSetting<uint8_t>("wirelessMode") == WIRELESS_CLIENT) { // Start WiFi in client mode
         if (!initWIFIClient()) while (true) blinkCode(RADIO_ERROR_CODE); // Block further code execution
     }
 
-    if (configData.wifiEnable && configData.ftpEnable) { // Start FTP server
+    if (getSetting<uint8_t>("wirelessMode") && getSetting<bool>("ftpEnabled")) { // Start FTP server
         if (!initFTPServer()) while (true) blinkCode(RADIO_ERROR_CODE);
     }
     #endif
@@ -154,7 +151,7 @@ void setup() {
         unsigned long _logStartTime = micros();
         dataLogger.writeTelemetryData();
         diagLogger->trace("Time to log data: %d us", micros() - _logStartTime);
-    });
+    } );
 
     setSystemState(STANDBY);
 }
@@ -165,7 +162,7 @@ void loop() {
 
     // WiFi handling
     #ifdef WIFI_ENABLE
-    if (configData.wifiEnable && configData.ftpEnable) { // Only run the FTP server when the proper configs are set and the device is not logging (efficiency)
+    if (getSetting<uint8_t>("wirelessMode") && getSetting<bool>("ftpEnabled")) { // Only run the FTP server when the proper configs are set and the device is not logging (efficiency)
         ftpServer.handleFTP();
     }
     #endif
@@ -192,24 +189,6 @@ void loop() {
     updateRTCms();
 }
 
-void updateSettings() {
-    diagLogger->info("Updating settings...");
-    // -----Sensor Configurations-----
-    dso32.setAccelRange(getAccelRange(configData.accelRange));
-    dso32.setGyroRange(getGyroRange(configData.gyroRange));
-    dso32.setAccelDataRate(getDataRate(configData.imuDataRate));
-    dso32.setGyroDataRate(getDataRate(configData.imuDataRate));
-    // TODO: Add magnetometer (LIS3MDL)
-
-    // -----Logging Configurations-----
-    // timerAlarmWrite(timer, 1E6/configData.loggingUpdateRate, true);
-    logFrequency = configData.loggingUpdateRate;
-    logInterval = 1E6/logFrequency; // us
-    // diagLogger->verbose("Set log interval to: %f seconds")
-    isDebugging ? diagLogger->setLogLevel(configData.logPrintLevel) : diagLogger->setLogLevel(configData.logFileLevel);
-    diagLogger->info("done!");
-}
-
 
 // ==================================
 // === INTERRUPT SERVICE ROUTINES ===
@@ -219,9 +198,4 @@ void updateSettings() {
 void IRAM_ATTR logButtonISR() {
     logButtonPresses++;
     logButtonStartTime = millis();
-}
-
-void IRAM_ATTR onTimer() {
-    // Give a semaphore that we can check in the loop
-    xSemaphoreGiveFromISR(timerSemaphore, NULL);
 }

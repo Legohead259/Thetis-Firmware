@@ -1,10 +1,10 @@
 /**
  * @file main.cpp
- * @version 1.1.3
+ * @version 1.3.0
  * @author Braidan Duffy (bduffy2018@my.fit.edu)
  * @brief 
  * @date June 10, 2022
- *       November 4, 2022 (last edit)
+ *       June 16, 2023 (last edit)
  * 
  * CHANGELOG:
  * Version 0.1.0 - Initial baseline release

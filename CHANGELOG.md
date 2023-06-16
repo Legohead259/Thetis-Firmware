@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 <!-- 
-Release sections
+## [TAG] A.B.C - YYYY-MM-DD
 ### Known Bugs
 ### Added
 ### Changed
@@ -14,6 +14,19 @@ Release sections
 ### Removed
 ### Security 
 -->
+
+## [UNRELEASED] 1.3.0 - 2023-06-15
+### Added
+- Added a TimerEvents class to handle non-critical timing events using basic callback functions
+- Added support for the xioAPI for messages and configuration settings
+
+### Changed
+- Changed some define behavior to look for `BATT_MON_ENABLED` instead of `REV_G2` or `REV_F5`
+   
+### Removed
+- Reverted the logging timing to the original interval-driven state
+
+---
 
 ## [UNRELEASED] 1.2.4 - 2023-02-17
 ### Added

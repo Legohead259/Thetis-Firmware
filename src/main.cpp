@@ -111,11 +111,11 @@ void setup() {
     }
     #endif // MAG_ENABLE
     
-    #if defined(REV_F5) || defined(REV_G2)
+    #ifdef BATT_MON_ENABLED
     if (!initMAX17048()) {
         while(true) blinkCode(GEN_ERROR_CODE); // Block further code execution
     }
-    #endif // defined(REV_F5) || defined(REV_G2)
+    #endif // BATT_MON_ENABLED
 
     #ifdef WIFI_ENABLE
     if (getSetting<uint8_t>("wirelessMode") == WIRELESS_AP) { // Start WiFi in Access Point mode

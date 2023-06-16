@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security 
 -->
 
-## [UNRELEASED] 1.3.0 - 2023-06-15
+## 1.3.0 - 2023-06-15
 ### Added
 - Added a TimerEvents class to handle non-critical timing events using basic callback functions
 - Added support for the xioAPI for messages and configuration settings

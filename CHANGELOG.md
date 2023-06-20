@@ -15,6 +15,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security 
 -->
 
+## [UNRELEASED] 1.3.1 - 2023-06-20
+### Added
+- Added a compile flag for enabling the Serial wait functionality
+- Added inertial messages to the sensor fusion timer callback
+
+### Changed
+- Changed the Serial RX buffer to 4096 bytes to handle the dump of requests from the x-IMU3 GUI on start-up (prevents overflows)
+
+### Fixed
+- Fixed the device logging when it wasn't supposed to be
+  
+### Removed
+- Removed the Serial diagnostic logger
+- Removed check for SD card present when starting the SD card diagnostic logger
+- Removed some leftover, unused variables
+  
+---
+
 ## 1.3.0 - 2023-06-15
 ### Added
 - Added a TimerEvents class to handle non-critical timing events using basic callback functions
@@ -57,7 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## 1.2.0 - 2022-12-25
+## [UNRELEASED] 1.2.0 - 2022-12-25
 ### Added
 - Add support for FTP server
 - Add ability to switch between WiFi client and WiFi AP modes

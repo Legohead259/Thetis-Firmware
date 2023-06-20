@@ -35,8 +35,6 @@
 
 #include <ThetisLib.h>
 
-unsigned long logFrequency; // Hz 
-unsigned long logInterval;  // Time between log updates [ms]
 unsigned long logButtonPresses;
 unsigned long logButtonStartTime;
 
@@ -55,26 +53,23 @@ void setup() {
     Wire.begin((int) SDA, (int) SCL);
 
     isDebugging = digitalRead(USB_DETECT); // Check if USB is plugged in
-    if (isDebugging && diagPrintLogger.begin(&Serial, LogLevel::DEBUG)) {
+    if (isDebugging) {
         Serial.begin(115200);
+        Serial.setRxBufferSize(4096);
+        #ifdef SERIAL_WAIT
         while(!Serial); // Wait for serial connection
+        #endif // SERIAL_WAIT
     }
     
-    diagLogger = isDebugging ? &diagPrintLogger : &diagFileLogger;
-
-    Serial.println("-------------------------------------");
-    Serial.println("    Thetis Firmware Version 1.3.0    ");
-    Serial.println("-------------------------------------");
-    Serial.println();
+    if (!diagFileLogger.begin(SD, SD_CS, LogLevel::DEBUG)) {
+        while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
+    }
+    diagLogger = &diagFileLogger;
 
     setSystemState(BOOTING);
 
     if (!initNeoPixel()) { // Initialize the NeoPixel
         while(true); // Block further code execution
-    }
-
-    if (!digitalRead(SD_CARD_DETECT) || !diagFileLogger.begin(SD, SD_CS, LogLevel::DEBUG)) {
-        while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
     }
 
     if (!initSPIFFS()) { // Initialize SD card filesystem and check if good
@@ -93,7 +88,6 @@ void setup() {
     if (!initGPS()) { // Initialize GPS and check if good
         while(true) blinkCode(GPS_ERROR_CODE); // Block further code execution
     }
-
     pollGPS();
     syncInternalClockGPS(); // Attempt to sync internal clock to GPS, if it has a fix already
 
@@ -145,12 +139,15 @@ void setup() {
         #if defined(REV_F5) || defined(REV_G2)
         updateVoltage();
         #endif // defined(REV_F5) || defined(REV_G2)
+        api.sendInertial({data.accelX, data.accelY, data.accelZ, data.gyroX, data.gyroY, data.gyroZ, micros()});
         diagLogger->trace("Time to process sensor fusion: %d ms", millis() - _fusionStartTime);
     } );
-    TimerEvents.add(logInterval, []() { 
-        unsigned long _logStartTime = micros();
-        dataLogger.writeTelemetryData();
-        diagLogger->trace("Time to log data: %d us", micros() - _logStartTime);
+    TimerEvents.add(20, []() {
+        if (isLogging) {
+            unsigned long _logStartTime = micros();
+            dataLogger.writeTelemetryData();
+            diagLogger->trace("Time to log data: %d us", micros() - _logStartTime);
+        }
     } );
 
     setSystemState(STANDBY);

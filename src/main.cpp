@@ -60,130 +60,150 @@ void setup() {
         while(!Serial); // Wait for serial connection
         #endif // SERIAL_WAIT
     }
+
+    #ifdef SERIAL_LOGGER
+    if (!diagPrintLogger.begin(&Serial, LogLevel::VERBOSE)) {
+        while(true);
+    }
+    diagLogger = &diagPrintLogger;
+    #endif // SERIAL_LOGGER
+
+    pixel.begin();
+    pixel.pulseLEDEvent.enable();
+    pixel.setPixelColor(0, BLUE);
+    pixel.show();
     
-    if (!diagFileLogger.begin(SD, SD_CS, LogLevel::DEBUG)) {
-        while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
-    }
-    diagLogger = &diagFileLogger;
+    // if (!diagFileLogger.begin(SD, SD_CS, LogLevel::DEBUG)) {
+    //     while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
+    // }
+    // diagLogger = &diagFileLogger;
 
-    setSystemState(BOOTING);
+    // setSystemState(BOOTING);
 
-    if (!initNeoPixel()) { // Initialize the NeoPixel
-        while(true); // Block further code execution
-    }
+    // if (!initNeoPixel()) { // Initialize the NeoPixel
+    //     while(true); // Block further code execution
+    // }
 
-    if (!initSPIFFS()) { // Initialize SD card filesystem and check if good
-        while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
-    }
+    // // if (!initSPIFFS()) { // Initialize SD card filesystem and check if good
+    // //     while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
+    // // }
 
-    if (!api.begin(&Serial)) {
-        while(true) blinkCode(GEN_ERROR_CODE); // Block further code execution
-    }
+    // if (!api.begin(&Serial)) {
+    //     while(true) blinkCode(GEN_ERROR_CODE); // Block further code execution
+    // }
 
-    thetisSettingsInitialize();
-    if (!loadConfigurationsFromJSON(true, "/config.json")) {
-        while(true) blinkCode(FILE_ERROR_CODE);
-    }
+    // thetisSettingsInitialize();
+    // if (!loadConfigurationsFromJSON(true, "/config.json")) {
+    //     while(true) blinkCode(FILE_ERROR_CODE);
+    // }
 
-    if (!initGPS()) { // Initialize GPS and check if good
-        while(true) blinkCode(GPS_ERROR_CODE); // Block further code execution
-    }
-    pollGPS();
-    syncInternalClockGPS(); // Attempt to sync internal clock to GPS, if it has a fix already
+    // if (!initGPS()) { // Initialize GPS and check if good
+    //     while(true) blinkCode(GPS_ERROR_CODE); // Block further code execution
+    // }
+    // pollGPS();
+    // syncInternalClockGPS(); // Attempt to sync internal clock to GPS, if it has a fix already
 
-    if (!dataLogger.begin(SD, SD_CS)) { // Initialize SD card filesystem and check if good
-        while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
-    }
+    // if (!dataLogger.begin(SD, SD_CS)) { // Initialize SD card filesystem and check if good
+    //     while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
+    // }
 
-    if (!initDSO32()) { // Check IMU initialization
-        while(true) blinkCode(IMU_ERROR_CODE); // Block further code execution
-    }
+    // if (!initDSO32()) { // Check IMU initialization
+    //     while(true) blinkCode(IMU_ERROR_CODE); // Block further code execution
+    // }
 
-    #ifdef MAG_ENABLE
-    if (!initLIS3MDL()) { // Check magnetometer initialization
-        while(true) blinkCode(IMU_ERROR_CODE);
-    }
-    #endif // MAG_ENABLE
+    // #ifdef MAG_ENABLE
+    // if (!initLIS3MDL()) { // Check magnetometer initialization
+    //     while(true) blinkCode(IMU_ERROR_CODE);
+    // }
+    // #endif // MAG_ENABLE
     
-    #ifdef BATT_MON_ENABLED
-    if (!initMAX17048()) {
-        while(true) blinkCode(GEN_ERROR_CODE); // Block further code execution
-    }
-    #endif // BATT_MON_ENABLED
+    // #ifdef BATT_MON_ENABLED
+    // if (!initMAX17048()) {
+    //     while(true) blinkCode(GEN_ERROR_CODE); // Block further code execution
+    // }
+    // #endif // BATT_MON_ENABLED
 
-    #ifdef WIFI_ENABLE
-    if (getSetting<uint8_t>("wirelessMode") == WIRELESS_AP) { // Start WiFi in Access Point mode
-        if (!initWIFIAP()) while (true) blinkCode(RADIO_ERROR_CODE); // Block further code execution
-    }
+    // #ifdef WIFI_ENABLE
+    // if (getSetting<uint8_t>("wirelessMode") == WIRELESS_AP) { // Start WiFi in Access Point mode
+    //     if (!initWIFIAP()) while (true) blinkCode(RADIO_ERROR_CODE); // Block further code execution
+    // }
 
-    if (getSetting<uint8_t>("wirelessMode") == WIRELESS_CLIENT) { // Start WiFi in client mode
-        if (!initWIFIClient()) while (true) blinkCode(RADIO_ERROR_CODE); // Block further code execution
-    }
+    // if (getSetting<uint8_t>("wirelessMode") == WIRELESS_CLIENT) { // Start WiFi in client mode
+    //     if (!initWIFIClient()) while (true) blinkCode(RADIO_ERROR_CODE); // Block further code execution
+    // }
 
-    if (getSetting<uint8_t>("wirelessMode") && getSetting<bool>("ftpEnabled")) { // Start FTP server
-        if (!initFTPServer()) while (true) blinkCode(RADIO_ERROR_CODE);
-    }
-    #endif
+    // if (getSetting<uint8_t>("wirelessMode") && getSetting<bool>("ftpEnabled")) { // Start FTP server
+    //     if (!initFTPServer()) while (true) blinkCode(RADIO_ERROR_CODE);
+    // }
+    // #endif
 
-    // Attach the log enable button interrupt
-    diagLogger->info("Attaching log enable interrupt...");
-    attachInterrupt(LOG_EN, logButtonISR, FALLING);
-    diagLogger->info("done!");
+    // // Attach the log enable button interrupt
+    // diagLogger->info("Attaching log enable interrupt...");
+    // attachInterrupt(LOG_EN, logButtonISR, FALLING);
+    // diagLogger->info("done!");
 
-    TimerEvents.add(GPS_POLL_INTERVAL, pollGPS);
-    TimerEvents.add(GPS_SYNC_INTERVAL*60000, syncInternalClockGPS);
-    TimerEvents.add(20, []() { 
-        unsigned long _fusionStartTime = micros();
-        pollDSO32();
-        pollLIS3MDL();
-        #if defined(REV_F5) || defined(REV_G2)
-        updateVoltage();
-        #endif // defined(REV_F5) || defined(REV_G2)
-        api.sendInertial({data.accelX, data.accelY, data.accelZ, data.gyroX, data.gyroY, data.gyroZ, micros()});
-        diagLogger->trace("Time to process sensor fusion: %d ms", millis() - _fusionStartTime);
-    } );
-    TimerEvents.add(20, []() {
-        if (isLogging) {
-            unsigned long _logStartTime = micros();
-            dataLogger.writeTelemetryData();
-            diagLogger->trace("Time to log data: %d us", micros() - _logStartTime);
-        }
-    } );
+    // TimerEvents.add(GPS_POLL_INTERVAL, pollGPS);
+    // TimerEvents.add(GPS_SYNC_INTERVAL*60000, syncInternalClockGPS);
+    // TimerEvents.add(20, []() { 
+    //     unsigned long _fusionStartTime = micros();
+    //     pollDSO32();
+    //     pollLIS3MDL();
+    //     #if defined(REV_F5) || defined(REV_G2)
+    //     updateVoltage();
+    //     #endif // defined(REV_F5) || defined(REV_G2)
+    //     api.sendInertial({data.accelX, data.accelY, data.accelZ, data.gyroX, data.gyroY, data.gyroZ, micros()});
+    //     diagLogger->trace("Time to process sensor fusion: %d ms", millis() - _fusionStartTime);
+    // } );
+    // TimerEvents.add(20, []() {
+    //     if (isLogging) {
+    //         unsigned long _logStartTime = micros();
+    //         dataLogger.writeTelemetryData();
+    //         diagLogger->trace("Time to log data: %d us", micros() - _logStartTime);
+    //     }
+    // } );
 
     setSystemState(STANDBY);
 }
 
 void loop() {
-    TimerEvents.tasks();
-    api.checkForCommand();
+    // diagLogger->debug("Setting pixel color");
+    // pixel.setPixelColor(0, BLUE);
+    // pixel.show();
+    // diagLogger->debug("done!");
+
+    // diagLogger->debug("Checking tasks");
+    timerEvents.tasks();
+    // diagLogger->debug("done");
+    
+    // api.checkForCommand();
 
     // WiFi handling
-    #ifdef WIFI_ENABLE
-    if (getSetting<uint8_t>("wirelessMode") && getSetting<bool>("ftpEnabled")) { // Only run the FTP server when the proper configs are set and the device is not logging (efficiency)
-        ftpServer.handleFTP();
-    }
-    #endif
+    // #ifdef WIFI_ENABLE
+    // if (getSetting<uint8_t>("wirelessMode") && getSetting<bool>("ftpEnabled")) { // Only run the FTP server when the proper configs are set and the device is not logging (efficiency)
+    //     ftpServer.handleFTP();
+    // }
+    // #endif
     
-    // State and LED updates
-    updateSystemState();
-    updateSystemLED();
+    // // State and LED updates
+    // updateSystemState();
+    // updateSystemLED();
 
-    // Log Enabling handler
-    static uint8_t _oldButtonPresses = 0;
-    if (logButtonPresses != _oldButtonPresses && !digitalRead(LOG_EN) && millis() >= logButtonStartTime+LOG_BTN_HOLD_TIME) { // Check if BTN0 has been pressed and has been held for sufficient time
-        isLogging = !isLogging;
-        if (isLogging) {
-            dataLogger.start(SD);
-            digitalWrite(SD_CS, LOW);
-        }
-        else {
-            dataLogger.stop();
-        }
-        digitalWrite(LED_BUILTIN, isLogging);
-        _oldButtonPresses = logButtonPresses;
-    }
+    // // Log Enabling handler
+    // static uint8_t _oldButtonPresses = 0;
+    // if (logButtonPresses != _oldButtonPresses && !digitalRead(LOG_EN) && millis() >= logButtonStartTime+LOG_BTN_HOLD_TIME) { // Check if BTN0 has been pressed and has been held for sufficient time
+    //     isLogging = !isLogging;
+    //     if (isLogging) {
+    //         dataLogger.start(SD);
+    //         digitalWrite(SD_CS, LOW);
+    //     }
+    //     else {
+    //         dataLogger.stop();
+    //     }
+    //     digitalWrite(LED_BUILTIN, isLogging);
+    //     _oldButtonPresses = logButtonPresses;
+    // }
 
-    updateRTCms();
+    // updateRTCms();
 }
 
 

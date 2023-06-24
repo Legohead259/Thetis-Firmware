@@ -33,7 +33,7 @@
 **/
 #define __FIRMWARE_VERSION__ "1.3.0"
 
-#include <ThetisLib.h>
+#include <Thetis.h>
 
 unsigned long logButtonPresses;
 unsigned long logButtonStartTime;
@@ -49,45 +49,6 @@ void IRAM_ATTR logButtonISR();
 void ARDUINO_ISR_ATTR onTimer();
 
 void setup() {
-    // Casting to int is important as just uint8_t types will invoke the "slave" begin, not the master
-    Wire.begin((int) SDA, (int) SCL);
-
-    isDebugging = digitalRead(USB_DETECT); // Check if USB is plugged in
-    if (isDebugging) {
-        Serial.begin(115200);
-        Serial.setRxBufferSize(4096);
-        #ifdef SERIAL_WAIT
-        while(!Serial); // Wait for serial connection
-        #endif // SERIAL_WAIT
-    }
-
-    #ifdef SERIAL_LOGGER
-    if (!diagPrintLogger.begin(&Serial, LogLevel::VERBOSE)) {
-        while(true);
-    }
-    diagLogger = &diagPrintLogger;
-    #endif // SERIAL_LOGGER
-
-    pixel.begin();
-    pixel.pulseLEDEvent.enable();
-    pixel.setPixelColor(0, BLUE);
-    pixel.show();
-    
-    // if (!diagFileLogger.begin(SD, SD_CS, LogLevel::DEBUG)) {
-    //     while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
-    // }
-    // diagLogger = &diagFileLogger;
-
-    // setSystemState(BOOTING);
-
-    // if (!initNeoPixel()) { // Initialize the NeoPixel
-    //     while(true); // Block further code execution
-    // }
-
-    // // if (!initSPIFFS()) { // Initialize SD card filesystem and check if good
-    // //     while(true) blinkCode(CARD_MOUNT_ERROR_CODE); // Block further code execution
-    // // }
-
     // if (!api.begin(&Serial)) {
     //     while(true) blinkCode(GEN_ERROR_CODE); // Block further code execution
     // }
@@ -162,18 +123,13 @@ void setup() {
     //     }
     // } );
 
-    setSystemState(STANDBY);
+    board.initialize();
+
+    board.setSystemState(STANDBY);
 }
 
 void loop() {
-    // diagLogger->debug("Setting pixel color");
-    // pixel.setPixelColor(0, BLUE);
-    // pixel.show();
-    // diagLogger->debug("done!");
-
-    // diagLogger->debug("Checking tasks");
     timerEvents.tasks();
-    // diagLogger->debug("done");
     
     // api.checkForCommand();
 

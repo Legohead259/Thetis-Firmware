@@ -1,16 +1,15 @@
-{"save":null}
 {
   "calibrationDate": "Unknown",
   "gyroscopeMisalignment": [
+    1,
     0,
     0,
     0,
+    1,
     0,
     0,
     0,
-    0,
-    0,
-    0
+    1
   ],
   "gyroscopeSensitivity": [
     0,
@@ -22,7 +21,17 @@
     0,
     0
   ],
-  "accelerometerMisalignment": null,
+  "accelerometerMisalignment": [
+    1,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    1
+  ],
   "accelerometerSensitivity": [
     0,
     0,
@@ -34,15 +43,15 @@
     0
   ],
   "softIronMatrix": [
+    1,
     0,
     0,
     0,
+    1,
     0,
     0,
     0,
-    0,
-    0,
-    0
+    1
   ],
   "hardIronOffset": [
     0,
@@ -50,15 +59,15 @@
     0
   ],
   "highGAccelerometerMisalignment": [
+    1,
     0,
     0,
     0,
+    1,
     0,
     0,
     0,
-    0,
-    0,
-    0
+    1
   ],
   "highGAccelerometerSensitivity": [
     0,
@@ -70,7 +79,7 @@
     0,
     0
   ],
-  "deviceName": "Thetis-002",
+  "deviceName": "Unknown",
   "serialNumber": "Unknown",
   "firmwareVersion": "Unknown",
   "bootloaderVersion": "Unknown",
@@ -137,17 +146,6 @@
   "temperatureMessageRateDivisor": 5,
   "batteryMessageRateDivisor": 5,
   "rssiMessageRateDivisor": 1,
-  "AccelerometerMisalignment": [
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0
-  ],
   "ftpEnabled": false,
   "ftpUsername": "",
   "ftpPassword": "",
@@ -160,5 +158,11 @@
   "magnetometerPerformanceMode": 1,
   "magnetometerOperationMode": 0,
   "magnetometerDataRate": 1,
-  "magnetometerRange": 0
+  "magnetometerRange": 0,
+  "gaugeResetVoltage": 2.5,
+  "gaugeActivityThreshold": 0.15,
+  "gaugeHibernationThreshold": 0.1,
+  "gaugeAlertMinVoltage": 3.0,
+  "gaugeAlertMaxVoltage": 4.2,
+  "fusionUpdateRate": 20
 }

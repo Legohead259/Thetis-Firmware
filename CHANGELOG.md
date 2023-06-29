@@ -15,6 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security 
 -->
 
+## 2.0.0-beta1 - 2023-06-29
+### Changed
+- Migrated all functions into the newest version of ThetisLib
+- Added new settings to base config file
+  
+### Removed
+- Removed dependency on ESP TinyUSB (for now)
+  
+---
+
 ## [UNRELEASED] 1.3.1 - 2023-06-20
 ### Added
 - Added a compile flag for enabling the Serial wait functionality

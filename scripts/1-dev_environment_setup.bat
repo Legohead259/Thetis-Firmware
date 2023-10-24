@@ -3,7 +3,7 @@
 @echo off
 
 :: Step One: Install VSCode and git VCS
-winget install -e -id Microsoft.VisualStudioCode
+winget install -e --id Microsoft.VisualStudioCode
 winget install --id Git.Git -e --source winget
 winget install --id=GitHub.cli  -e
 

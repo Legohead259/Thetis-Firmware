@@ -6,7 +6,7 @@ This repository is the firmware used on that board to capture sensor measurement
 
 ## Installing the Development Environment
 This firmware was developed in Microsoft Visual Studio Code using the PlatformIO extension on Windows 10 for compilation and uploading.
-To automatically install and initialize the environment, download the scripts in [scripts/](scripts/) and execute `1-dev_environment_setup.bat` as an administrator, following the on-screen prompts.
+To automatically install and initialize the environment, download the [initialization scripts](scripts/) and execute `1-dev_environment_setup.bat` as an administrator, following the on-screen prompts.
 It will go through the steps discussed in the following sections.
 
 ### Step 1: Install VS Code and git VCS
